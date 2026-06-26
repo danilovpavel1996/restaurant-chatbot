@@ -1,6 +1,7 @@
 """All Telegram handlers: /start, message routing, reservation state machine, callbacks."""
 
 import logging
+import os
 import re
 from datetime import date, datetime, timedelta
 from typing import Optional
@@ -29,6 +30,7 @@ TIME_SLOTS: list[str] = config["reservations"]["time_slots"]
 MAX_PARTY: int = config["reservations"]["max_party_size"]
 BOOKING_WINDOW: int = config["reservations"]["booking_window_days"]
 PHONE_CONTACT: str = config["contact"]["phone"]
+MANAGER_CHAT_ID: str | None = os.getenv("MANAGER_CHAT_ID")
 
 # Monday=0 … Sunday=6 (matches date.weekday())
 _WEEKDAYS = {
@@ -698,7 +700,32 @@ async def _after_hookah(target, state_data: dict, hookah_name: Optional[str]) ->
     await target.reply_text(_msg(lang, "ask_special_requests"), parse_mode="Markdown")
 
 
-async def _do_confirm(target, state_data: dict) -> None:
+async def _notify_manager(context: ContextTypes.DEFAULT_TYPE, reservation: dict) -> None:
+    if not MANAGER_CHAT_ID:
+        return
+    msg = (
+        f"🔔 *New Reservation — {reservation['id']}*\n\n"
+        f"👤 Name: {reservation['name']}\n"
+        f"📅 Date: {reservation['date']}\n"
+        f"🕐 Time: {reservation['time']}\n"
+        f"👥 Guests: {reservation['party_size']}\n"
+        f"📞 Phone: {reservation['phone']}\n"
+        f"🪑 Seating: {reservation['seating_preference']}\n"
+        f"🔥 Hookah: {reservation.get('hookah') or 'None'}\n"
+        f"📝 Special requests: {reservation.get('special_requests') or 'None'}\n"
+        f"🕒 Booked at: {reservation['created_at']}"
+    )
+    try:
+        await context.bot.send_message(
+            chat_id=MANAGER_CHAT_ID,
+            text=msg,
+            parse_mode="Markdown",
+        )
+    except Exception as exc:
+        logger.error("Failed to notify manager: %s", exc)
+
+
+async def _do_confirm(target, context: ContextTypes.DEFAULT_TYPE, state_data: dict) -> None:
     """Create reservation and send confirmation."""
     lang = state_data["language"]
     data = dict(state_data["data"])
@@ -709,16 +736,19 @@ async def _do_confirm(target, state_data: dict) -> None:
         await target.reply_text(_msg(lang, "err_general"))
         return
 
+    reservation = find_by_id(res_id)
     _reset_reservation(state_data)
     summary = _format_summary(data, lang)
     text = _msg(lang, "confirmed", res_id=res_id, summary=summary, phone=PHONE_CONTACT)
     await target.reply_text(text, parse_mode="Markdown")
+    if reservation:
+        await _notify_manager(context, reservation)
 
 
 # ── Reservation state machine ──────────────────────────────────────────────────
 
 async def _handle_reservation_text(
-    update: Update, _ctx: ContextTypes.DEFAULT_TYPE, state_data: dict, text: str
+    update: Update, ctx: ContextTypes.DEFAULT_TYPE, state_data: dict, text: str
 ) -> None:
     msg = update.message
     lang = state_data["language"]
@@ -847,7 +877,7 @@ async def _handle_reservation_text(
     elif state == "awaiting_confirmation":
         lower = text.lower()
         if any(w in lower for w in ["da", "yes", "да", "ok", "y", "d", "confirm"]):
-            await _do_confirm(msg, state_data)
+            await _do_confirm(msg, ctx, state_data)
         elif any(w in lower for w in ["nu", "no", "нет", "n", "cancel", "anulare"]):
             _reset_reservation(state_data)
             await msg.reply_text(_msg(lang, "cancelled_by_user"))
@@ -1152,7 +1182,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # ── Reservation confirmation ──────────────────────────────────────────────
     elif data == "confirm_yes":
         if state_data["state"] == "awaiting_confirmation":
-            await _do_confirm(msg, state_data)
+            await _do_confirm(msg, context, state_data)
 
     elif data == "confirm_no":
         if state_data["state"] == "awaiting_confirmation":
