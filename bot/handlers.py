@@ -12,6 +12,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from .ai import get_ai_response
+from .sheets import append_reservation
 from .reservations import (
     cancel_reservation,
     create_reservation,
@@ -743,6 +744,7 @@ async def _do_confirm(target, context: ContextTypes.DEFAULT_TYPE, state_data: di
     await target.reply_text(text, parse_mode="Markdown")
     if reservation:
         await _notify_manager(context, reservation)
+        append_reservation(reservation)
 
 
 # ── Reservation state machine ──────────────────────────────────────────────────

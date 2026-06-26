@@ -4,3 +4,6 @@ __pycache__/
 *.pyc
 .claude/
 reservations.json
+*.json
+deepseek-449217-fc86a5a0a699.json
+google_credentials.json
