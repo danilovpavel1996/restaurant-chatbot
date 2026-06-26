@@ -43,6 +43,9 @@ def main() -> None:
     # All text messages (non-command)
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
+    from bot.sheets import init_tables_sheet
+    init_tables_sheet()
+
     logger.info("Komodo Lounge bot is starting — polling for updates…")
     app.run_polling(allowed_updates=["message", "callback_query"])
 

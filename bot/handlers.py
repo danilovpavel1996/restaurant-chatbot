@@ -12,6 +12,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import ContextTypes
 
 from .ai import get_ai_response
+from .capacity import find_available_table, find_nearest_available_slot, get_available_slots
 from .sheets import append_reservation
 from .reservations import (
     cancel_reservation,
@@ -129,6 +130,7 @@ MESSAGES: dict = {
         "err_past_date": "Data introdusă este în trecut. Alegeți o dată viitoare.",
         "err_date_far": "Rezervările se fac cu maxim 30 de zile înainte. Alegeți o dată mai apropiată.",
         "err_invalid_time": "Ora nu este disponibilă. Slot-uri valide: {slots}",
+        "time_suggest": "Cel mai apropiat slot disponibil este {time}. Este OK? (da / nu)",
         "err_party_large": "Grupul maxim este de {max} persoane. Introduceți un număr valid.",
         "err_party_invalid": "Introduceți un număr valid de persoane (1–{max}).",
         "err_party_ask_again": "Câți oaspeți vor fi? (maximum {max})",
@@ -195,6 +197,7 @@ MESSAGES: dict = {
         "err_past_date": "That date is in the past. Please choose a future date.",
         "err_date_far": "Reservations can be made up to 30 days in advance. Please choose a closer date.",
         "err_invalid_time": "That time slot is not available. Valid slots: {slots}",
+        "time_suggest": "The closest available slot is {time}. Is that OK? (yes / no)",
         "err_party_large": "Maximum group size is {max}. Please enter a valid number.",
         "err_party_invalid": "Please enter a valid number of guests (1–{max}).",
         "err_party_ask_again": "How many guests will be joining? (up to {max})",
@@ -261,6 +264,7 @@ MESSAGES: dict = {
         "err_past_date": "Введённая дата уже прошла. Выберите будущую дату.",
         "err_date_far": "Бронирование доступно за 30 дней. Выберите более близкую дату.",
         "err_invalid_time": "Этот слот недоступен. Доступные слоты: {slots}",
+        "time_suggest": "Ближайший доступный слот — {time}. Подходит? (да / нет)",
         "err_party_large": "Максимальный размер группы — {max} человек.",
         "err_party_invalid": "Введите корректное число гостей (1–{max}).",
         "err_party_ask_again": "Сколько гостей будет? (максимум {max})",
@@ -550,7 +554,7 @@ def _date_display(d: date, lang: str) -> str:
 
 
 def _validate_time(text: str) -> tuple[bool, str]:
-    """Returns (ok, normalised_time_or_empty)."""
+    """Returns (ok, normalised_time_or_empty). Strict HH:MM, used by /modify."""
     text = text.strip()
     m = re.match(r"^(\d{1,2}):(\d{2})$", text)
     if m:
@@ -558,6 +562,71 @@ def _validate_time(text: str) -> tuple[bool, str]:
         if normalised in TIME_SLOTS:
             return True, normalised
     return False, ""
+
+
+def _time_to_minutes(t: str) -> int:
+    h, mn = t.split(":")
+    return int(h) * 60 + int(mn)
+
+
+def _closest_slot(time_str: str) -> str:
+    target = _time_to_minutes(time_str)
+    return min(TIME_SLOTS, key=lambda s: abs(_time_to_minutes(s) - target))
+
+
+def _parse_time_natural(text: str) -> Optional[str]:
+    """
+    Parse natural-language time input into HH:MM.
+    Returns None if completely unparseable.
+    """
+    text = text.strip().lower()
+
+    # Strip locale-specific prefixes
+    text = re.sub(
+        r"^(în jurul orei|în jur de|în jurul|ora|around|about|около|в|at|la|pe la|pe)\s+",
+        "", text, flags=re.IGNORECASE | re.UNICODE,
+    ).strip()
+    # Strip locale-specific suffixes
+    text = re.sub(
+        r"\s+(часов|часа|ч\.?|ore|o'clock)$", "", text, flags=re.IGNORECASE,
+    ).strip()
+
+    # "half past N"
+    m = re.match(r"^half\s+past\s+(\d{1,2})$", text)
+    if m:
+        h = int(m.group(1))
+        if 0 <= h <= 23:
+            return f"{h:02d}:30"
+
+    # "N am" / "N:MM am" / "N pm" / "N:MM pm"
+    m = re.match(r"^(\d{1,2})(?::(\d{2}))?\s*([ap])\.?m\.?$", text)
+    if m:
+        h, mn, period = int(m.group(1)), int(m.group(2) or 0), m.group(3)
+        if period == "p" and h != 12:
+            h += 12
+        elif period == "a" and h == 12:
+            h = 0
+        if 0 <= h <= 23 and 0 <= mn <= 59:
+            return f"{h:02d}:{mn:02d}"
+        return None
+
+    # "HH:MM"
+    m = re.match(r"^(\d{1,2}):(\d{2})$", text)
+    if m:
+        h, mn = int(m.group(1)), int(m.group(2))
+        if 0 <= h <= 23 and 0 <= mn <= 59:
+            return f"{h:02d}:{mn:02d}"
+        return None
+
+    # Bare number or "Nh" — treat as HH:00
+    m = re.match(r"^(\d{1,2})h?$", text)
+    if m:
+        h = int(m.group(1))
+        if 0 <= h <= 23:
+            return f"{h:02d}:00"
+        return None
+
+    return None
 
 
 # ── Inline keyboard builders ───────────────────────────────────────────────────
@@ -641,6 +710,17 @@ def _format_summary(data: dict, lang: str) -> str:
 
     special = data.get("special_requests") or {"ro": "Fără", "en": "None", "ru": "Нет"}[lang]
 
+    table_line = ""
+    if data.get("table_id"):
+        tid = data["table_id"]
+        cap = data.get("table_capacity", "")
+        loc = data.get("table_location", "")
+        table_line = {
+            "en": f"\n• Table: {tid} (seats {cap}, {loc})",
+            "ro": f"\n• Masă: {tid} ({cap} locuri, {loc})",
+            "ru": f"\n• Стол: {tid} ({cap} места, {loc})",
+        }.get(lang, f"\n• Table: {tid}")
+
     if lang == "en":
         return (
             f"📋 Reservation summary:\n"
@@ -649,7 +729,7 @@ def _format_summary(data: dict, lang: str) -> str:
             f"• Time: {data.get('time', '')}\n"
             f"• Guests: {data.get('party_size', '')}\n"
             f"• Phone: {data.get('phone', '')}\n"
-            f"• Seating: {seating_text}{hookah_line}\n"
+            f"• Seating: {seating_text}{hookah_line}{table_line}\n"
             f"• Special requests: {special}"
         )
     elif lang == "ru":
@@ -660,7 +740,7 @@ def _format_summary(data: dict, lang: str) -> str:
             f"• Время: {data.get('time', '')}\n"
             f"• Гостей: {data.get('party_size', '')}\n"
             f"• Телефон: {data.get('phone', '')}\n"
-            f"• Место: {seating_text}{hookah_line}\n"
+            f"• Место: {seating_text}{hookah_line}{table_line}\n"
             f"• Особые пожелания: {special}"
         )
     else:
@@ -671,7 +751,7 @@ def _format_summary(data: dict, lang: str) -> str:
             f"• Ora: {data.get('time', '')}\n"
             f"• Persoane: {data.get('party_size', '')}\n"
             f"• Telefon: {data.get('phone', '')}\n"
-            f"• Loc: {seating_text}{hookah_line}\n"
+            f"• Loc: {seating_text}{hookah_line}{table_line}\n"
             f"• Cereri speciale: {special}"
         )
 
@@ -712,6 +792,7 @@ async def _notify_manager(context: ContextTypes.DEFAULT_TYPE, reservation: dict)
         f"👥 Guests: {reservation['party_size']}\n"
         f"📞 Phone: {reservation['phone']}\n"
         f"🪑 Seating: {reservation['seating_preference']}\n"
+        f"🪑 Table: {reservation.get('table_id', 'TBD')}\n"
         f"🔥 Hookah: {reservation.get('hookah') or 'None'}\n"
         f"📝 Special requests: {reservation.get('special_requests') or 'None'}\n"
         f"🕒 Booked at: {reservation['created_at']}"
@@ -729,6 +810,18 @@ async def _do_confirm(target, context: ContextTypes.DEFAULT_TYPE, state_data: di
     """Create reservation and send confirmation."""
     lang = state_data["language"]
     data = dict(state_data["data"])
+
+    # Assign table before saving so it ends up in the JSON record in one write
+    seating_pref = data.get("seating_preference", "")
+    location = "terrace" if "terrace" in seating_pref else "indoor"
+    table = find_available_table(data["date"], data["time"], data["party_size"], location)
+    if table:
+        data["table_id"]       = table["id"]
+        data["table_capacity"] = table["capacity"]
+        data["table_location"] = table["location"]
+    else:
+        data["table_id"] = "TBD"
+
     try:
         res_id = create_reservation(data)
     except Exception as exc:
@@ -791,8 +884,8 @@ async def _handle_reservation_text(
                 await msg.reply_text(_msg(lang, err_key) + "\n" + _msg(lang, "date_confirm_retry"))
             else:
                 data["date"] = pending.strftime("%d.%m.%Y")
-                state_data["state"] = "awaiting_time"
-                await msg.reply_text(_msg(lang, "ask_time", slots=_slots_str()))
+                state_data["state"] = "awaiting_party_size"
+                await msg.reply_text(_msg(lang, "ask_party_size", max=MAX_PARTY))
         elif any(w in lower for w in ["nu", "no", "нет", "n", "wrong", "greșit", "неверно"]):
             data.pop("_pending_date", None)
             state_data["state"] = "awaiting_date"
@@ -806,19 +899,61 @@ async def _handle_reservation_text(
             )
 
     elif state == "awaiting_time":
-        ok, normalised = _validate_time(text)
-        if not ok:
-            await msg.reply_text(_msg(lang, "err_invalid_time", slots=_slots_str()))
+        available_slots = data.get("available_slots") or TIME_SLOTS
+        normalised = _parse_time_natural(text)
+        if normalised is None:
+            await msg.reply_text(_msg(lang, "err_invalid_time", slots=", ".join(available_slots)))
             return
-        data["time"] = normalised
-        notes = ""
-        if normalised >= "22:30":
-            notes += _msg(lang, "note_sushi")
-        if normalised >= "23:00":
-            notes += _msg(lang, "note_kitchen")
-        state_data["state"] = "awaiting_party_size"
-        reply = (notes + "\n\n" if notes else "") + _msg(lang, "ask_party_size", max=MAX_PARTY)
-        await msg.reply_text(reply)
+        if normalised in available_slots:
+            data["time"] = normalised
+            notes = ""
+            if normalised >= "22:30":
+                notes += _msg(lang, "note_sushi")
+            if normalised >= "23:00":
+                notes += _msg(lang, "note_kitchen")
+            state_data["state"] = "awaiting_phone"
+            reply = (notes + "\n\n" if notes else "") + _msg(lang, "ask_phone")
+            await msg.reply_text(reply)
+        else:
+            nearest = find_nearest_available_slot(
+                data.get("date", ""), normalised, data.get("party_size", 1)
+            )
+            if nearest:
+                data["_pending_time"] = nearest
+                state_data["state"] = "awaiting_time_confirmation"
+                await msg.reply_text(_msg(lang, "time_suggest", time=nearest))
+            else:
+                no_slots_msg = {
+                    "ro": "Ne pare rău, nu mai sunt locuri disponibile în acea zi.",
+                    "en": "Sorry, no more slots available that day for your party size.",
+                    "ru": "К сожалению, свободных столиков на этот день больше нет.",
+                }.get(lang, "Sorry, no slots available.")
+                await msg.reply_text(no_slots_msg)
+                state_data["state"] = "awaiting_date"
+                data.pop("date", None)
+                data.pop("available_slots", None)
+
+    elif state == "awaiting_time_confirmation":
+        lower = text.lower()
+        available_slots = data.get("available_slots") or TIME_SLOTS
+        if any(w in lower for w in ["da", "yes", "да", "ok", "y", "d"]):
+            suggested = data.pop("_pending_time")
+            data["time"] = suggested
+            notes = ""
+            if suggested >= "22:30":
+                notes += _msg(lang, "note_sushi")
+            if suggested >= "23:00":
+                notes += _msg(lang, "note_kitchen")
+            state_data["state"] = "awaiting_phone"
+            reply = (notes + "\n\n" if notes else "") + _msg(lang, "ask_phone")
+            await msg.reply_text(reply)
+        elif any(w in lower for w in ["nu", "no", "нет", "n"]):
+            data.pop("_pending_time", None)
+            state_data["state"] = "awaiting_time"
+            await msg.reply_text(_msg(lang, "ask_time", slots=", ".join(available_slots)))
+        else:
+            suggested = data.get("_pending_time", "")
+            await msg.reply_text(_msg(lang, "time_suggest", time=suggested))
 
     elif state == "awaiting_party_size":
         size = _extract_party_size(text, lang)
@@ -829,8 +964,23 @@ async def _handle_reservation_text(
             await msg.reply_text(_msg(lang, "err_party_large", max=MAX_PARTY))
             return
         data["party_size"] = size
-        state_data["state"] = "awaiting_phone"
-        await msg.reply_text(_msg(lang, "ask_phone"))
+
+        available_slots = get_available_slots(data.get("date", ""), size)
+        if not available_slots:
+            no_tables_msg = {
+                "ro": f"Ne pare rău, nu mai avem mese disponibile pentru {size} persoane în acea zi. Vă rugăm să alegeți altă dată.",
+                "en": f"Sorry, we have no available tables for {size} guests on that date. Please choose a different date.",
+                "ru": f"К сожалению, на эту дату нет свободных столиков для {size} гостей. Пожалуйста, выберите другую дату.",
+            }.get(lang, f"Sorry, no tables available for {size} guests on that date.")
+            await msg.reply_text(no_tables_msg)
+            state_data["state"] = "awaiting_date"
+            data.pop("date", None)
+            data.pop("party_size", None)
+            return
+
+        data["available_slots"] = available_slots
+        state_data["state"] = "awaiting_time"
+        await msg.reply_text(_msg(lang, "ask_time", slots=", ".join(available_slots)))
 
     elif state == "awaiting_phone":
         data["phone"] = text
@@ -1045,7 +1195,8 @@ async def modify_command(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> Non
 # ── Main message router ────────────────────────────────────────────────────────
 
 _RESERVATION_STATES = {
-    "awaiting_name", "awaiting_date", "awaiting_date_confirmation", "awaiting_time",
+    "awaiting_name", "awaiting_date", "awaiting_date_confirmation",
+    "awaiting_time", "awaiting_time_confirmation",
     "awaiting_party_size", "awaiting_phone", "awaiting_seating", "awaiting_hookah",
     "awaiting_special_requests", "awaiting_confirmation",
 }
