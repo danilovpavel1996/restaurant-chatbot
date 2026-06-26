@@ -1,0 +1,12 @@
+{
+  "tables": [
+    {"id": "T01", "capacity": 2, "location": "indoor", "notes": "Window table"},
+    {"id": "T02", "capacity": 2, "location": "indoor", "notes": "Corner table"},
+    {"id": "T03", "capacity": 4, "location": "indoor", "notes": "Center table"},
+    {"id": "T04", "capacity": 4, "location": "indoor", "notes": "Near bar"},
+    {"id": "T05", "capacity": 6, "location": "indoor", "notes": "Large indoor group"},
+    {"id": "T06", "capacity": 2, "location": "terrace", "notes": "Terrace small"},
+    {"id": "T07", "capacity": 4, "location": "terrace", "notes": "Terrace medium"},
+    {"id": "T08", "capacity": 6, "location": "terrace", "notes": "Terrace large"}
+  ]
+}
