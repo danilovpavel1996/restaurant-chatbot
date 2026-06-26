@@ -11,6 +11,8 @@ RESERVATIONS_FILE = os.path.join(
 
 
 def _load() -> dict:
+    if not os.path.exists(RESERVATIONS_FILE):
+        _save({"reservations": [], "waitlist": []})
     with open(RESERVATIONS_FILE, "r", encoding="utf-8") as f:
         return json.load(f)
 
