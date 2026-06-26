@@ -1,0 +1,704 @@
+{
+  "restaurant": {
+    "name": "Komodo Lounge Floreasca",
+    "description": "A premium lounge restaurant in Bucharest, blending Mediterranean and Asian cuisine with an extensive cocktail menu, fine wines, and hookah (narghilea) service.",
+    "location": "Floreasca neighborhood, Bucharest"
+  },
+
+  "contact": {
+    "phone": "+40731555558",
+    "website": "https://komodolounge.ro/en",
+    "address": "Calea Floreasca 60, 014453 București, România",
+    "google_maps": "https://maps.google.com/?q=Komodo+Lounge+Floreasca+Calea+Floreasca+60+Bucharest"
+  },
+
+  "hours": {
+    "note": "Three separate schedules apply: lounge hours, kitchen hours, and sushi hours.",
+    "lounge": {
+      "monday":    { "open": "10:00", "close": "02:00" },
+      "tuesday":   { "open": "10:00", "close": "02:00" },
+      "wednesday": { "open": "10:00", "close": "02:00" },
+      "thursday":  { "open": "10:00", "close": "02:00" },
+      "friday":    { "open": "10:00", "close": "02:00" },
+      "saturday":  { "open": "10:00", "close": "02:00" },
+      "sunday":    { "open": "10:00", "close": "02:00" }
+    },
+    "kitchen": {
+      "monday":    { "open": "12:00", "close": "23:00" },
+      "tuesday":   { "open": "12:00", "close": "23:00" },
+      "wednesday": { "open": "12:00", "close": "23:00" },
+      "thursday":  { "open": "12:00", "close": "23:00" },
+      "friday":    { "open": "12:00", "close": "23:00" },
+      "saturday":  { "open": "12:00", "close": "23:00" },
+      "sunday":    { "open": "12:00", "close": "23:00" }
+    },
+    "breakfast": {
+      "available": "10:00–14:00 daily"
+    },
+    "sushi": {
+      "available": "12:00–22:30 daily"
+    },
+    "happy_hour": {
+      "days": "Monday–Friday",
+      "time": "12:00–18:00",
+      "description": "Promotional prices on hookah (narghilea). Second hookah 50% off."
+    }
+  },
+
+  "policies": {
+    "languages": ["Romanian", "English", "Russian"],
+    "bot_language_note": "Detect the customer's language and respond in the same language throughout the conversation.",
+    "payment_methods": ["cash", "card Visa", "card Mastercard"],
+    "reservations_required": false,
+    "walk_ins": true,
+    "walk_ins_note": "Walk-ins are welcome. Reservations recommended for groups and weekend evenings.",
+    "dress_code": "Smart casual.",
+    "age_restriction": "Hookah (narghilea) service is available for guests aged 18+ only."
+  },
+
+  "seating": {
+    "indoor": {
+      "available": true,
+      "description": "Elegant indoor lounge dining area."
+    },
+    "terrace": {
+      "available": true,
+      "description": "Outdoor terrace. Hookah (narghilea) is available both indoors and outdoors.",
+      "hookah_allowed": true
+    },
+    "hookah_note": "Narghilea can be ordered at any table, indoors or outdoors."
+  },
+
+  "hookah": {
+    "available": true,
+    "currency": "MDL",
+    "options": [
+      {
+        "id": "H01",
+        "name": "Narghilea Clasică",
+        "name_en": "Classic Hookah",
+        "name_ru": "Кальян классический",
+        "description": "Consultați-vă cu Shisha Master-ul nostru pentru a descoperi mixuri din gama noastră variată.",
+        "description_en": "Consult our Shisha Master to discover mixes from our varied range.",
+        "description_ru": "Проконсультируйтесь с нашим Shisha Master для выбора микса из нашего ассортимента.",
+        "price_mdl": 585
+      },
+      {
+        "id": "H02",
+        "name": "Narghilea Cocktail Vase",
+        "name_en": "Cocktail Vase Hookah",
+        "name_ru": "Кальян Cocktail Vase",
+        "description": "Bolul narghilelei este umplut cu un mix special de cocktail non-alcoolic care intensifică aroma fumului.",
+        "description_en": "The hookah bowl is filled with a special non-alcoholic cocktail mix that intensifies the smoke aroma.",
+        "description_ru": "Чаша кальяна заполнена специальным безалкогольным коктейльным миксом, усиливающим аромат дыма.",
+        "price_mdl": 975
+      },
+      {
+        "id": "H03",
+        "name": "Narghilea Premium",
+        "name_en": "Premium Hookah",
+        "name_ru": "Кальян Премиум",
+        "description": "Shisha cu fruit bowl — aromele fructelor proaspete se împletesc cu mixuri atent alese.",
+        "description_en": "Hookah with a fruit bowl — fresh fruit aromas combined with carefully selected mixes.",
+        "description_ru": "Кальян с фруктовой чашей — ароматы свежих фруктов в сочетании с тщательно подобранными миксами.",
+        "price_mdl": 1365
+      }
+    ],
+    "happy_hour": {
+      "days": "Monday–Friday",
+      "time": "12:00–18:00",
+      "offer": "50% discount on the second hookah ordered.",
+      "price_second_hookah_mdl": 293
+    }
+  },
+
+  "menu": {
+    "currency": "MDL",
+    "note": "All prices in MDL (Moldovan Leu).",
+
+    "breakfast": {
+      "available": "10:00–14:00",
+      "items": [
+        {
+          "id": "B01",
+          "name": "Salată cu Feta Pane",
+          "name_en": "Greek Salad with Pane Feta",
+          "name_ru": "Салат с панированной фетой",
+          "ingredients": "salată chef, ceapă roșie, roșii, măsline, brânză feta, ou, ulei de măsline, oregano, muștar Dijon",
+          "price_mdl": 215
+        },
+        {
+          "id": "B02",
+          "name": "Ouă Ochiuri cu Bacon",
+          "name_en": "Fried Eggs with Bacon",
+          "name_ru": "Яичница с беконом",
+          "ingredients": "pâine cu semințe, ou, bacon, spanac, unt, cartof dulce",
+          "price_mdl": 215
+        },
+        {
+          "id": "B03",
+          "name": "Omletă cu Bacon",
+          "name_en": "Bacon Omelette",
+          "name_ru": "Омлет с беконом",
+          "ingredients": "ou, bacon, pâine cu cerneală de sepie, ardei kapia, ceapă verde, unt, smântână, cașcaval topit, chives, pătrunjel",
+          "price_mdl": 215
+        },
+        {
+          "id": "B04",
+          "name": "Piperchi",
+          "name_en": "Piperchi (Egg & Pepper Toast)",
+          "name_ru": "Пиперчи",
+          "ingredients": "pâine cu semințe, ou, ardei kapia, roșii, brânză feta, ulei de măsline, pătrunjel, chives, usturoi",
+          "price_mdl": 195
+        },
+        {
+          "id": "B05",
+          "name": "Somon Fumé",
+          "name_en": "Smoked Salmon Toast",
+          "name_ru": "Тост с копчёным лососем",
+          "ingredients": "pâine cu cerneală de sepie, somon afumat, cremă de brânză, avocado, rucola, icre de somon, togarashi, dressing de susan, lămâie",
+          "price_mdl": 332
+        }
+      ]
+    },
+
+    "new_summer_menu": {
+      "available": "12:00–23:00",
+      "items": [
+        {
+          "id": "NS01",
+          "name": "Midii în Sos de Vin",
+          "name_en": "Mussels in Wine Sauce",
+          "name_ru": "Мидии в винном соусе",
+          "ingredients": "midii, roșii cherry, usturoi, ardei iute roșu, țelină apio, lămâie, unt, pătrunjel, ardei kapia, ceapă roșie, vin alb, ulei de măsline",
+          "price_mdl": 293
+        },
+        {
+          "id": "NS02",
+          "name": "Midii în Sos Roșu cu Ouzo",
+          "name_en": "Mussels in Red Ouzo Sauce",
+          "name_ru": "Мидии в красном соусе с Узо",
+          "ingredients": "midii, roșii cherry, usturoi, ardei iute roșu, țelină apio, lămâie, ouzo, unt, ceapă roșie, pulpă de roșii, pătrunjel, ardei kapia, ulei de măsline",
+          "price_mdl": 293
+        },
+        {
+          "id": "NS03",
+          "name": "Sea Bass Truffle",
+          "name_en": "Sea Bass Truffle Sashimi",
+          "name_ru": "Сашими из морского окуня с трюфелем",
+          "ingredients": "sashimi de biban de mare, yuzu kosho green, felii de trufe, sare, chives, pulpă de yuzu, sos de soia, ulei, mirin, sare japoneză, salsa de trufe",
+          "price_mdl": 312
+        },
+        {
+          "id": "NS04",
+          "name": "Sardine la Plită",
+          "name_en": "Grilled Sardines",
+          "name_ru": "Сардины на гриле",
+          "ingredients": "sardine, roșii cherry, salată chef, lămâie, ceapă roșie, pătrunjel, ulei de măsline, sare, boia dulce afumată, usturoi, oregano",
+          "price_mdl": 273
+        },
+        {
+          "id": "NS05",
+          "name": "Pui Komodo",
+          "name_en": "Komodo Chicken",
+          "name_ru": "Курица Комодо",
+          "ingredients": "pastă miso, sake, mirin, sos de soia, usturoi, ghimbir, ulei, ulei de susan, perle de orez, roșii, ardei iute roșu, cocos, ciuperci shiitake, spanac",
+          "price_mdl": 351
+        },
+        {
+          "id": "NS06",
+          "name": "Creveți Saganaki",
+          "name_en": "Saganaki Shrimp",
+          "name_ru": "Креветки Саганаки",
+          "ingredients": "creveți, pulpă de roșii, usturoi, sare, ouzo, pătrunjel, brânză feta, roșii cherry, ulei de măsline",
+          "price_mdl": 351
+        },
+        {
+          "id": "NS07",
+          "name": "Doradă Roșie cu Legume Mediteraneene",
+          "name_en": "Red Sea Bream with Mediterranean Vegetables",
+          "name_ru": "Дорада с средиземноморскими овощами",
+          "ingredients": "doradă, cartof, ardei gras, zucchini, măsline, capere, fenicul, rozmarin, ulei de măsline, oregano, usturoi, lămâie, vin alb, pulpă de roșii",
+          "price_mdl": 429
+        },
+        {
+          "id": "NS08",
+          "name": "Piept de Rață Asiatic",
+          "name_en": "Asian Duck Breast",
+          "name_ru": "Азиатская утиная грудка",
+          "ingredients": "piept de rață, pak choi, zucchini, broccoli, ulei de susan, sake, sos oyster, ridiche albă, portocală, sos teriyaki, sos de soia, ghimbir, usturoi",
+          "price_mdl": 624
+        },
+        {
+          "id": "NS09",
+          "name": "Doradă la Grătar cu Cartofi Noi a la Jar",
+          "name_en": "Grilled Sea Bream with New Potatoes",
+          "name_ru": "Дорада на гриле с молодым картофелем",
+          "ingredients": "doradă, cartofi noi, chives, sake, unt, lămâie, ulei de măsline, sos yuzu",
+          "price_mdl": 527
+        },
+        {
+          "id": "NS10",
+          "name": "Biban la Grătar cu Cartofi Noi a la Jar",
+          "name_en": "Grilled Sea Bass with New Potatoes",
+          "name_ru": "Окунь на гриле с молодым картофелем",
+          "ingredients": "biban, cartofi noi, chives, sake, unt, lămâie, ulei de măsline, sos yuzu",
+          "price_mdl": 429
+        },
+        {
+          "id": "NS11",
+          "name": "Burger Wagyu cu Cartofi Dulci",
+          "name_en": "Wagyu Burger with Sweet Potato Fries",
+          "name_ru": "Бургер Вагю с бататом",
+          "ingredients": "chiflă burger, carne Wagyu, maioneză, sos sweet chili, castraveți murați, brânză cheddar, cartofi dulci",
+          "price_mdl": 371
+        }
+      ]
+    },
+
+    "salads": {
+      "available": "12:00–02:00",
+      "items": [
+        { "id": "SA01", "name": "Summer Salad", "name_en": "Summer Salad", "name_ru": "Летний салат", "ingredients": "roșii, ardei gras, castravete, ceapă roșie, mărar, ulei de măsline, oregano, măsline, brânză feta", "price_mdl": 195 },
+        { "id": "SA02", "name": "Ponzu Salad", "name_en": "Ponzu Salad", "name_ru": "Салат Понзу", "ingredients": "salată chef, ceapă roșie, ardei gras, roșii cherry, ulei de susan, sos ponzu", "price_mdl": 156 },
+        { "id": "SA03", "name": "Salată de Alge Wakame", "name_en": "Wakame Seaweed Salad", "name_ru": "Салат Вакамэ", "ingredients": "alge wakame", "price_mdl": 117 },
+        { "id": "SA04", "name": "Salată Verde cu Wasabi", "name_en": "Green Salad with Wasabi Dressing", "name_ru": "Зелёный салат с васаби", "ingredients": "salată verde și dressing cu wasabi", "price_mdl": 156 }
+      ]
+    },
+
+    "soups": {
+      "available": "12:00–02:00",
+      "items": [
+        { "id": "SO01", "name": "Supă Miso", "name_en": "Miso Soup", "name_ru": "Суп Мисо", "ingredients": "pastă miso, tofu, alge uscate, ceapă verde", "price_mdl": 129 },
+        { "id": "SO02", "name": "Supă Tom-Yum", "name_en": "Tom Yum Soup", "name_ru": "Суп Том-Ям", "ingredients": "creveți, ciuperci Pleurotus, ciuperci brune, bok choy, chives, lime, susan", "price_mdl": 304 }
+      ]
+    },
+
+    "premium_starters": {
+      "available": "12:00–23:00",
+      "items": [
+        { "id": "PS01", "name": "Stridie", "name_en": "Oyster", "name_ru": "Устрица", "ingredients": "stridie Geay No. 2, sos ponzu, ceapă roșie, lămâie, frunze shiso, sos Tabasco", "price_mdl": 98, "note": "Per piece / per bucată" },
+        { "id": "PS02", "name": "Tataki de Ton", "name_en": "Tuna Tataki", "name_ru": "Тунец Татаки", "ingredients": "ton tataki, daikon, chives, ghimbir, wasabi, sos ponzu, susan", "price_mdl": 371 },
+        { "id": "PS03", "name": "Pork Bao-Bun", "name_en": "Pork Bao Bun", "name_ru": "Свиной Бао-Бун", "ingredients": "chiflă bao, carne de porc, praz, salată chef, varză roșie, varză albă, sos yakiniku", "price_mdl": 254 },
+        { "id": "PS04", "name": "Shrimp Bao-Bun", "name_en": "Shrimp Bao Bun", "name_ru": "Бао-Бун с креветками", "ingredients": "chiflă bao, salată iceberg, ridiche roșie, creveți în crustă panko, salată chef, ardei jalapeño, maioneză Kewpie, sos tonkatsu, coriandru", "price_mdl": 265 },
+        { "id": "PS05", "name": "Tartar de Somon", "name_en": "Salmon Tartare", "name_ru": "Тартар из лосося", "ingredients": "somon, avocado, daikon, chives, wasabi, ghimbir, sos kimchi, maioneză Kewpie, Sriracha, ulei de susan, lime, perle de orez", "price_mdl": 312 },
+        { "id": "PS06", "name": "Tartar de Ton", "name_en": "Tuna Tartare", "name_ru": "Тартар из тунца", "ingredients": "ton, avocado, daikon, chives, wasabi, ghimbir, sos kimchi, maioneză Kewpie, Sriracha, ulei de susan, lime, perle de orez", "price_mdl": 351 }
+      ]
+    },
+
+    "premium_mains": {
+      "available": "12:00–23:00",
+      "items": [
+        { "id": "PM01", "name": "Steak de Vită Sirloin", "name_en": "Sirloin Beef Steak", "name_ru": "Стейк Сирлоин", "ingredients": "steak de vită marinat în stil japonez, cartofi prăjiți, sos de ardei copți și alune", "price_mdl": 800 },
+        { "id": "PM02", "name": "Antricot (Rib-Eye) Vită", "name_en": "Rib-Eye Steak", "name_ru": "Рибай", "ingredients": "antricot de vită, unt și sare afumată", "price_mdl": 839 },
+        { "id": "PM03", "name": "Biban Butterfly", "name_en": "Butterfly Sea Bass", "name_ru": "Морской окунь Баттерфляй", "ingredients": "biban, sos de unt, ulei de susan, lămâie, chives, sare afumată", "price_mdl": 371 },
+        { "id": "PM04", "name": "Steak Somon", "name_en": "Salmon Steak", "name_ru": "Стейк из лосося", "ingredients": "somon, broccoli, unt și sos miso", "price_mdl": 410 },
+        { "id": "PM05", "name": "Creveți în Sos de Unt și Lime", "name_en": "Shrimp in Butter Lime Sauce", "name_ru": "Креветки в масляно-лаймовом соусе", "ingredients": "creveți, unt, cimbru, rozmarin, lime, usturoi, chives, ardei iute roșu", "price_mdl": 371 },
+        { "id": "PM06", "name": "Platou Creveți Fritto Misto", "name_en": "Shrimp Fritto Misto Platter", "name_ru": "Тарелка Фритто Мисто из креветок", "ingredients": "16 creveți, lămâie, salată frisée, sos de susan, maioneză, smântână lichidă, usturoi, capere, pătrunjel, piper", "price_mdl": 585 },
+        { "id": "PM07", "name": "Caracatiță cu Măsline și Roșii", "name_en": "Octopus with Olives and Tomatoes", "name_ru": "Осьминог с оливками и томатами", "ingredients": "caracatiță, măsline, capere, roșii uscate, avocado, roșii cherry, sare afumată, ulei de măsline, lămâie", "price_mdl": 429 },
+        { "id": "PM08", "name": "Chicken Satay cu Nasi Goreng", "name_en": "Chicken Satay with Nasi Goreng", "name_ru": "Куриный Сатай с Наси Горенг", "ingredients": "piept de pui, soia, lime, ulei de susan, ceapă verde, morcov, usturoi, orez, sos teriyaki, sos oyster, salată frisée, castravete, sos de susan, ceapă roșie, ardei iute roșu, alune", "price_mdl": 293 },
+        { "id": "PM09", "name": "Frigărui de Somon cu Sos Yakiniku", "name_en": "Salmon Skewers with Yakiniku Sauce", "name_ru": "Шашлычки из лосося с соусом Якинику", "ingredients": "somon, orez kimchi, ceapă verde, susan, sos yakiniku", "price_mdl": 410 }
+      ]
+    },
+
+    "mains": {
+      "available": "12:00–02:00",
+      "items": [
+        { "id": "MA01", "name": "Pui Teriyaki cu Orez", "name_en": "Chicken Teriyaki with Rice", "name_ru": "Курица Терияки с рисом", "ingredients": "piept de pui, orez, susan, ceapă verde, ardei gras, zucchini, vinete, sos teriyaki", "price_mdl": 332 },
+        { "id": "MA02", "name": "Somon Teriyaki cu Orez", "name_en": "Salmon Teriyaki with Rice", "name_ru": "Лосось Терияки с рисом", "ingredients": "somon, orez, susan, ceapă verde, ardei gras, zucchini, vinete, sos teriyaki", "price_mdl": 371 },
+        { "id": "MA03", "name": "Noodles cu Legume", "name_en": "Vegetable Noodles", "name_ru": "Лапша с овощами", "ingredients": "noodles, morcavi, ardei, sos de soia, ulei de susan, sake, sos oyster, ceapă verde", "price_mdl": 254 },
+        { "id": "MA04", "name": "Noodles cu Pui", "name_en": "Chicken Noodles", "name_ru": "Лапша с курицей", "ingredients": "noodles, pui, morcovi, ardei, sos de soia, ulei de susan, sake, sos oyster, ceapă verde", "price_mdl": 293 },
+        { "id": "MA05", "name": "Noodles cu Creveți", "name_en": "Shrimp Noodles", "name_ru": "Лапша с креветками", "ingredients": "noodles, creveți, ardei, morcov, ceapă verde, usturoi, lime, sos de soia, sos oyster, sake, susan", "price_mdl": 351 },
+        { "id": "MA06", "name": "Burger de Vită cu Cartofi Prăjiți", "name_en": "Beef Burger with Fries", "name_ru": "Бургер из говядины с картошкой фри", "ingredients": "chiflă burger, carne Black Angus, roșii, salată iceberg, castraveți murați, brânză topită, sos whiskey, sos sweet chili, cartofi prăjiți, dressing de susan", "price_mdl": 293 },
+        { "id": "MA07", "name": "Burger de Pui Karaage cu Cartofi Prăjiți", "name_en": "Karaage Chicken Burger with Fries", "name_ru": "Бургер с курицей Карааге и картошкой фри", "ingredients": "chiflă, pui karaage, varză chinezească, sos kimchi, brânză topită, chives, maioneză Kewpie, cartofi prăjiți, dressing de susan", "price_mdl": 273 },
+        { "id": "MA08", "name": "Caracatiță a la Gallega", "name_en": "Octopus a la Gallega", "name_ru": "Осьминог а-ля Гальега", "ingredients": "caracatiță, unt aromatizat, usturoi, sos sweet chili, boia afumată, ierburi proaspete, cartofi prăjiți", "price_mdl": 468 }
+      ]
+    },
+
+    "sides": {
+      "available": "12:00–02:00",
+      "items": [
+        { "id": "SI01", "name": "Orez Kimchi", "name_en": "Kimchi Rice", "name_ru": "Рис Кимчи", "price_mdl": 176 },
+        { "id": "SI02", "name": "Cartofi Prăjiți", "name_en": "French Fries", "name_ru": "Картошка фри", "price_mdl": 94 },
+        { "id": "SI03", "name": "Sparanghel", "name_en": "Asparagus", "name_ru": "Спаржа", "price_mdl": 183 },
+        { "id": "SI04", "name": "Orez Simplu", "name_en": "Steamed Rice", "name_ru": "Простой рис", "price_mdl": 90 },
+        { "id": "SI05", "name": "Broccoli", "name_en": "Broccoli", "name_ru": "Брокколи", "price_mdl": 152 },
+        { "id": "SI06", "name": "Cartofi Noi", "name_en": "New Potatoes", "name_ru": "Молодой картофель", "price_mdl": 109 },
+        { "id": "SI07", "name": "Mix Ciuperci cu Unt și Usturoi", "name_en": "Mushroom Mix with Butter and Garlic", "name_ru": "Ассорти грибов с маслом и чесноком", "price_mdl": 176 },
+        { "id": "SI08", "name": "Orez Cantonez", "name_en": "Cantonese Rice", "name_ru": "Кантонский рис", "price_mdl": 176 },
+        { "id": "SI09", "name": "Cartofi Dulci Prăjiți", "name_en": "Sweet Potato Fries", "name_ru": "Жареный батат", "price_mdl": 94 }
+      ]
+    },
+
+    "desserts": {
+      "available": "12:00–02:00",
+      "items": [
+        { "id": "DE01", "name": "Tiramisu", "name_en": "Tiramisu", "name_ru": "Тирамису", "price_mdl": 215 },
+        { "id": "DE02", "name": "Mango Sticky Rice", "name_en": "Mango Sticky Rice", "name_ru": "Манго со стики-рисом", "ingredients": "orez, lapte de cocos, zahăr, mango, semințe de susan, sare", "price_mdl": 246 },
+        { "id": "DE03", "name": "Platou de Fructe de Sezon", "name_en": "Seasonal Fruit Platter", "name_ru": "Тарелка сезонных фруктов", "price_mdl": 468 },
+        { "id": "DE04", "name": "Cheesecake Matcha", "name_en": "Matcha Cheesecake", "name_ru": "Чизкейк Матча", "ingredients": "biscuiți digestivi, cremă de brânză, unt, smântână lichidă, pudră matcha, ciocolată albă, esență de vanilie, zahăr pudră", "price_mdl": 176 },
+        { "id": "DE05", "name": "Komodo Garden", "name_en": "Komodo Garden", "name_ru": "Комодо Гарден", "ingredients": "cremă de brânză, frișcă lichidă, pastă de fistic, zahăr pudră, biscuiți digestivi, căpșuni, zmeură, afine, bomboane de ciocolată", "price_mdl": 195 }
+      ]
+    },
+
+    "sushi": {
+      "available": "12:00–22:30",
+      "note": "Sushi orders must be placed before 22:30.",
+
+      "rolls": [
+        { "id": "RO01", "name": "Mango Shrimp Roll", "ingredients": "orez, susan, creveți, perle de orez, sos Sweet Chilli, salată iceberg, mango", "price_mdl": 312 },
+        { "id": "RO02", "name": "Trio Yuzu Roll", "ingredients": "orez, susan, somon, ton, creveți Ebi, mango, icre de somon, perle de orez", "price_mdl": 371 },
+        { "id": "RO03", "name": "Bell Pepper Roll", "ingredients": "orez, susan, castravete, salată iceberg, ardei kapia, sos Unagi, perle de orez", "price_mdl": 312 },
+        { "id": "RO04", "name": "Red Mullet Roll", "ingredients": "orez, ceapă caramelizată, pesmet panko, barbun, maioneză japoneză, sos Unagi, chives, castravete, avocado", "price_mdl": 312 },
+        { "id": "RO05", "name": "Octopus Roll", "ingredients": "orez, susan, caracatiță, castravete, ridiche murată (daikon), maioneză japoneză, tobiko", "price_mdl": 429 },
+        { "id": "RO06", "name": "Soft Shell Crab Roll", "ingredients": "orez, susan, crab soft-shell, avocado, maioneză japoneză, sos Bulldog, perle de orez", "price_mdl": 312 }
+      ],
+
+      "sushi_sets": [
+        {
+          "id": "SS01",
+          "name": "Salmon Sushi Set (2 persoane)",
+          "name_en": "Salmon Sushi Set (2 persons)",
+          "name_ru": "Сет Лосось (2 персоны)",
+          "contents": "Salmon Fried Roll (8 buc), Hoso Maki Somon (6 buc), Nigiri Spicy Salmon Flambat (4 buc), Nigiri Somon (4 buc), Sashimi Somon (4 buc)",
+          "price_mdl": 819
+        },
+        {
+          "id": "SS02",
+          "name": "Platou Sushi Set Mixt (2 persoane)",
+          "name_en": "Mixed Sushi Set (2 persons)",
+          "name_ru": "Смешанный Суши-сет (2 персоны)",
+          "contents": "Philly Salmon Flambat (8 buc), Hoso Maki Ton (6 buc), Nigiri Ton (2 buc), Nigiri Somon (2 buc), Nigiri Shrimp (2 buc), Sashimi Lup de Mare Flambat (3 buc), Sashimi Ton (2 buc)",
+          "price_mdl": 878
+        }
+      ],
+
+      "special_rolls": [
+        { "id": "SR01", "name": "Salmon Fried Roll", "ingredients": "somon, orez, alge Nori, castravete, avocado, susan, spicy mayo, ceapă caramelizată (8 buc)", "price_mdl": 293 },
+        { "id": "SR02", "name": "Dragon Roll", "ingredients": "creveți, orez, alge Nori, castravete, avocado, maioneză japoneză, cartof mov (8 buc)", "price_mdl": 332 },
+        { "id": "SR03", "name": "Philly Salmon Flambat", "ingredients": "somon, orez, alge Nori, castravete, avocado, cremă de brânză, icre de somon (8 buc)", "price_mdl": 351 },
+        { "id": "SR04", "name": "Shrimp Fistic Roll", "ingredients": "creveți, orez, alge Nori, avocado, sos Unagi, cașcaval topit, fistic, susan (8 buc)", "price_mdl": 332 },
+        { "id": "SR05", "name": "Tuna Leek", "ingredients": "ton, creveți Ebi, orez, alge Nori, cremă de brânză, tobiko, praz, maioneză japoneză, susan (8 buc)", "price_mdl": 371 },
+        { "id": "SR06", "name": "Spicy Tuna Roll", "ingredients": "ton, orez, alge Nori, avocado, ardei jalapeño, maioneză japoneză, chives (8 buc)", "price_mdl": 371 },
+        { "id": "SR07", "name": "Spicy Salmon Flambat", "ingredients": "somon, orez, alge Nori, avocado, susan, maioneză japoneză, sos Fire, chives (8 buc)", "price_mdl": 332 },
+        { "id": "SR08", "name": "Komodo Roll", "ingredients": "creveți, anghilă, orez, alge Nori, avocado, susan, piure de mango, sos Unagi, perle de orez (8 buc)", "price_mdl": 371 }
+      ],
+
+      "hoso_maki": [
+        { "id": "HM01", "name": "Hoso Maki Ton", "ingredients": "ton, orez, alge Nori (6 buc)", "price_mdl": 164 },
+        { "id": "HM02", "name": "Hoso Maki Somon", "ingredients": "somon, orez, alge Nori (6 buc)", "price_mdl": 164 },
+        { "id": "HM03", "name": "Hoso Maki Ton și Frunze Shiso", "ingredients": "ton, frunze Shiso, orez, alge Nori (6 buc)", "price_mdl": 156 },
+        { "id": "HM04", "name": "Hoso Maki Avocado", "ingredients": "avocado, orez, alge Nori (6 buc)", "price_mdl": 129 },
+        { "id": "HM05", "name": "Hoso Maki Creveți Ebi", "ingredients": "creveți Ebi, orez, alge Nori (6 buc)", "price_mdl": 164 },
+        { "id": "HM06", "name": "Hoso Maki Castravete", "ingredients": "castravete, orez, alge Nori (6 buc)", "price_mdl": 109 }
+      ],
+
+      "nigiri": [
+        { "id": "NI01", "name": "Nigiri Somon", "ingredients": "somon, orez (2 buc)", "price_mdl": 105 },
+        { "id": "NI02", "name": "Nigiri Spicy Salmon Flambat", "ingredients": "somon, orez, sos Teriyaki, maioneză japoneză, chives (2 buc)", "price_mdl": 113 },
+        { "id": "NI03", "name": "Nigiri Ton", "ingredients": "ton, orez (2 buc)", "price_mdl": 125 },
+        { "id": "NI04", "name": "Nigiri Eel", "ingredients": "anghilă, orez (2 buc)", "price_mdl": 144 },
+        { "id": "NI05", "name": "Nigiri Shrimp", "ingredients": "creveți Ebi, orez (2 buc)", "price_mdl": 113 },
+        { "id": "NI06", "name": "Nigiri Salmon Truffle", "ingredients": "somon, orez, icre de somon, cremă de brânză, trufe (2 buc)", "price_mdl": 133 },
+        { "id": "NI07", "name": "Nigiri Ton, Ghimbir și Mayo", "ingredients": "ton, orez, ghimbir, maioneză japoneză (2 buc)", "price_mdl": 133 }
+      ],
+
+      "sashimi": [
+        { "id": "SA01", "name": "Sashimi Somon", "ingredients": "somon, daikon, frunză Shiso (4 buc)", "price_mdl": 156 },
+        { "id": "SA02", "name": "Sashimi Ton", "ingredients": "ton, daikon, frunză Shiso (4 buc)", "price_mdl": 207 },
+        { "id": "SA03", "name": "Sashimi Creveți Ebi", "ingredients": "creveți Ebi, daikon, frunză Shiso (4 buc)", "price_mdl": 168 },
+        { "id": "SA04", "name": "Sashimi Eel", "ingredients": "anghilă, castravete, sos Unagi (4 buc)", "price_mdl": 168 }
+      ]
+    },
+
+    "drinks": {
+      "cocktails_classic": {
+        "available": "10:00–02:00",
+        "items": [
+          { "id": "CC01", "name": "Aperol Spritz", "ingredients": "Aperol, Prosecco, apă carbogazoasă", "volume_ml": 500, "price_mdl": 172 },
+          { "id": "CC02", "name": "Komodo Gin", "ingredients": "gin, apă tonică, infuzie de grapefruit", "volume_ml": 400, "price_mdl": 172 },
+          { "id": "CC03", "name": "Hugo", "ingredients": "Prosecco, lichior de soc, apă minerală, mentă", "volume_ml": 500, "price_mdl": 172 },
+          { "id": "CC04", "name": "Negroni", "ingredients": "gin, vermut dulce, Campari", "volume_ml": 250, "price_mdl": 172 },
+          { "id": "CC05", "name": "Espresso Martini", "ingredients": "vodcă, Kahlua, cafea", "volume_ml": 170, "price_mdl": 172 },
+          { "id": "CC06", "name": "Côte du Azur", "ingredients": "Limoncello, Prosecco, apă carbogazoasă, cimbru", "volume_ml": 350, "price_mdl": 172 },
+          { "id": "CC07", "name": "Amaretto Sour", "ingredients": "Amaretto Disaronno, suc de lămâie, sirop de zahăr", "volume_ml": 250, "price_mdl": 179 },
+          { "id": "CC08", "name": "Pornstar Martini", "ingredients": "vodcă, lichior fructul pasiunii, suc de lime, Prosecco", "volume_ml": 200, "price_mdl": 187 },
+          { "id": "CC09", "name": "Margarita", "ingredients": "tequila, triplu sec, suc de lime, sare", "volume_ml": 160, "price_mdl": 172 },
+          { "id": "CC10", "name": "Mai Thai", "ingredients": "rom alb, rom închis, suc de lime, suc de portocale, sirop de migdale", "volume_ml": 320, "price_mdl": 187 },
+          { "id": "CC11", "name": "Tiki Master", "ingredients": "rom, suc de ananas, suc de lime, sirop de zahăr, Jägermeister", "volume_ml": 320, "price_mdl": 187 },
+          { "id": "CC12", "name": "Whiskey Sour", "ingredients": "whisky, suc de lămâie, sirop de zahăr", "volume_ml": 250, "price_mdl": 172 },
+          { "id": "CC13", "name": "Long Island", "ingredients": "vodcă, gin, rom alb, tequila, triplu sec, suc de lămâie, sirop de zahăr, cola", "volume_ml": 420, "price_mdl": 203 }
+        ]
+      },
+
+      "cocktails_signature": {
+        "available": "10:00–02:00",
+        "note": "Our Touch on Cocktails — signature creations by Komodo",
+        "items": [
+          { "id": "CS01", "name": "Ecuador", "ingredients": "gin, suc de lămâie, piure mango, chili, apă tonică", "price_mdl": 179 },
+          { "id": "CS02", "name": "Paloma Baby", "ingredients": "tequila, sirop de miere, fresh de grapefruit, apă minerală", "price_mdl": 179 },
+          { "id": "CS03", "name": "Bali Porn Star", "ingredients": "vodcă, piure fructul pasiunii, suc de lămâie, sirop lychee, Prosecco", "price_mdl": 191 },
+          { "id": "CS04", "name": "Caramel Old Fashioned", "ingredients": "rom, sirop caramel sărat, Angostura bitter ciocolată", "price_mdl": 176 },
+          { "id": "CS05", "name": "Pineapple Temple", "ingredients": "rom, cordial ananas cu cardamom, piure cocos, sirop lemongrass, sirop ghimbir", "price_mdl": 176 },
+          { "id": "CS06", "name": "Amalfi Breeze", "ingredients": "Aperol, gin, sirop melon, foam", "price_mdl": 176 },
+          { "id": "CS07", "name": "Santorini", "ingredients": "gin, sirop bergamotă, suc de lămâie, busuioc", "price_mdl": 168 },
+          { "id": "CS08", "name": "Komodo Negroni", "ingredients": "Campari, rom, Martini Rosso, sirop cocos, Angostura bitter chocolate", "price_mdl": 176 }
+        ]
+      },
+
+      "cocktails_non_alcoholic": {
+        "items": [
+          { "id": "CNA01", "name": "Komodo Strawberry", "ingredients": "piure căpșuni, suc lămâie, cimbru, apă tonică", "price_mdl": 148 },
+          { "id": "CNA02", "name": "Ecuador (fără alcool)", "ingredients": "piure mango, fresh lămâie, apă tonică", "price_mdl": 148 },
+          { "id": "CNA03", "name": "Pop Star Martini", "ingredients": "suc ananas, suc portocale, piure fructul pasiunii, suc lămâie, sirop popcorn", "volume_ml": 300, "price_mdl": 148 }
+        ]
+      },
+
+      "beer_cider": {
+        "items": [
+          { "name": "Carlsberg", "volume": "0.33L", "price_mdl": 98 },
+          { "name": "Bucur Brună", "volume": "350ml", "price_mdl": 98 },
+          { "name": "Tuborg", "volume": "330ml", "price_mdl": 86 },
+          { "name": "Weihenstephaner", "volume": "330ml", "price_mdl": 137 },
+          { "name": "Somersby Afine", "volume": "330ml", "price_mdl": 98 },
+          { "name": "Somersby Mere", "volume": "330ml", "price_mdl": 98 },
+          { "name": "Carlsberg Non-Alcoholic", "volume": "330ml", "price_mdl": 98 },
+          { "name": "Carlsberg Draught", "volume": "400ml", "price_mdl": 117 },
+          { "name": "Blanc 1664 Draught", "volume": "330ml", "price_mdl": 137 },
+          { "name": "Guinness Draught", "volume": "530ml", "price_mdl": 156 }
+        ]
+      },
+
+      "lemonades": {
+        "note": "All 430ml",
+        "items": [
+          { "name": "Limonadă clasică", "ingredients": "apă, lămâie, miere", "price_mdl": 125 },
+          { "name": "Limonadă cu mentă", "price_mdl": 137 },
+          { "name": "Limonadă cu căpșuni", "price_mdl": 137 },
+          { "name": "Limonadă cu mango", "price_mdl": 137 },
+          { "name": "Limonadă cu fructul pasiunii", "price_mdl": 137 },
+          { "name": "Limonadă cu fructe de pădure", "price_mdl": 137 },
+          { "name": "Limonadă cu ghimbir", "price_mdl": 137 },
+          { "name": "Limonadă aloe vera & castraveți", "price_mdl": 156 }
+        ]
+      },
+
+      "fresh_juices": {
+        "note": "250ml each",
+        "items": [
+          { "name": "Fresh portocale", "price_mdl": 137 },
+          { "name": "Fresh grapefruit", "price_mdl": 137 },
+          { "name": "Fresh mixt", "price_mdl": 137 }
+        ]
+      },
+
+      "tea": {
+        "note": "All teas 125 MDL (350ml)",
+        "items": ["African Solstice", "Ginger Lemongrass", "Citrus Mint", "Chamomile Citron", "Raspberry", "Blueberry Merlot", "Green Mango Peach", "Moroccan Mint", "Jasmine Green", "White Ginger Pear", "Earl Grey", "Orchid Vanilla", "Bombay Chai"],
+        "price_mdl": 125
+      },
+
+      "ice_tea": {
+        "note": "All 148 MDL",
+        "items": ["Raspberry Nectar", "Ginger Pear", "Mango Peach", "Blueberry Merlot"],
+        "price_mdl": 148
+      },
+
+      "coffee": {
+        "items": [
+          { "name": "Espresso Single", "price_mdl": 66 },
+          { "name": "Espresso Double", "price_mdl": 86 },
+          { "name": "Cappuccino", "price_mdl": 101 },
+          { "name": "Flat White", "price_mdl": 101 },
+          { "name": "Americano", "price_mdl": 70 },
+          { "name": "Espresso Macchiato", "price_mdl": 78 },
+          { "name": "Mocha", "price_mdl": 105 },
+          { "name": "Caffè Latte", "price_mdl": 109 },
+          { "name": "Espresso Tonic", "price_mdl": 109 }
+        ]
+      },
+
+      "hot_drinks": {
+        "items": [
+          { "name": "Ciocolată caldă", "price_mdl": 109 },
+          { "name": "Ciocolată albă", "price_mdl": 117 },
+          { "name": "Charcoal Latte", "price_mdl": 109 },
+          { "name": "Matcha Latte", "price_mdl": 109 },
+          { "name": "Raspberry Chai Latte", "price_mdl": 109 }
+        ]
+      },
+
+      "soft_drinks": {
+        "note": "Cola, Sprite, Fanta, Schweppes, Cappy, Fuzetea etc.",
+        "price_mdl": 78
+      },
+
+      "water": {
+        "items": [
+          { "name": "Apă plată", "volume": "330ml", "price_mdl": 70 },
+          { "name": "Apă minerală", "volume": "330ml", "price_mdl": 70 },
+          { "name": "Dorna", "volume": "0.75L", "price_mdl": 117 }
+        ]
+      },
+
+      "energy_drinks": {
+        "items": [
+          { "name": "Red Bull", "price_mdl": 98 },
+          { "name": "Red Bull Sugar Free", "price_mdl": 98 }
+        ]
+      },
+
+      "spirits": {
+        "aperitifs": [
+          { "name": "Campari", "price_mdl": 94 },
+          { "name": "Martini Bianco", "price_mdl": 94 },
+          { "name": "Martini Rosso", "price_mdl": 94 }
+        ],
+        "whisky": [
+          { "name": "Glenfiddich 12", "price_mdl": 207 },
+          { "name": "Nikka Miyagikyo", "price_mdl": 336 },
+          { "name": "Hibiki Harmony", "price_mdl": 491 },
+          { "name": "Royal Salute 21", "price_mdl": 585 },
+          { "name": "Yamazaki Reserve", "price_mdl": 546 },
+          { "name": "Glenfiddich 18", "price_mdl": 386 },
+          { "name": "Macallan 12", "price_mdl": 332 },
+          { "name": "Jameson Black Barrel", "price_mdl": 215 },
+          { "name": "Woodford Reserve", "price_mdl": 215 },
+          { "name": "Four Roses", "price_mdl": 129 }
+        ],
+        "cognac": [
+          { "name": "Hennessy VSOP", "price_mdl": 254 },
+          { "name": "Rémy Martin VSOP", "price_mdl": 254 },
+          { "name": "Hennessy XO", "price_mdl": 605 },
+          { "name": "Rémy Martin XO", "price_mdl": 605 },
+          { "name": "Courvoisier XO", "price_mdl": 527 },
+          { "name": "Vecchia Romagna", "price_mdl": 137 }
+        ],
+        "liqueurs": [
+          { "name": "Baileys", "price_mdl": 137 },
+          { "name": "Kahlua", "price_mdl": 137 },
+          { "name": "Disaronno", "price_mdl": 137 },
+          { "name": "Jägermeister", "price_mdl": 137 },
+          { "name": "Limoncello", "price_mdl": 117 },
+          { "name": "Fernet", "price_mdl": 117 },
+          { "name": "Montenegro", "price_mdl": 117 },
+          { "name": "Dracula's Desire", "price_mdl": 117 },
+          { "name": "Cointreau", "price_mdl": 117 }
+        ],
+        "gin": [
+          { "name": "Hendrick's", "price_mdl": 176 },
+          { "name": "Tanqueray", "price_mdl": 129 },
+          { "name": "Tanqueray 0%", "price_mdl": 117 },
+          { "name": "Botanist", "price_mdl": 195 },
+          { "name": "Whitley Neill", "price_mdl": 215 },
+          { "name": "Whitley Neill Yuzu", "price_mdl": 176 }
+        ],
+        "rum": [
+          { "name": "Zacapa XO", "price_mdl": 527 },
+          { "name": "Zacapa 23", "price_mdl": 312 },
+          { "name": "Bumbu Cream", "price_mdl": 133 },
+          { "name": "Bumbu Original", "price_mdl": 176 },
+          { "name": "Bumbu XO", "price_mdl": 195 },
+          { "name": "Plantation 3 Stars", "price_mdl": 156 }
+        ],
+        "sake": [
+          { "name": "Hakutsuru Sayuri", "price_mdl": 176 }
+        ],
+        "tequila": [
+          { "name": "Don Julio 1942", "price_mdl": 351 },
+          { "name": "Clase Azul", "price_mdl": 975 },
+          { "name": "Don Julio Reposado", "price_mdl": 234 },
+          { "name": "1800 Silver", "price_mdl": 215 }
+        ],
+        "vodka": [
+          { "name": "Grey Goose", "price_mdl": 211 },
+          { "name": "Beluga", "price_mdl": 219 },
+          { "name": "Absolut Vanilla", "price_mdl": 137 },
+          { "name": "Spirit of Dracula", "price_mdl": 117 }
+        ]
+      },
+
+      "wines": {
+        "by_glass": [
+          { "name": "Castellum Dracula Merlot Cabernet", "type": "red", "volume": "150ml", "price_mdl": 137 },
+          { "name": "Castellum Dracula Chardonnay", "type": "white", "volume": "150ml", "price_mdl": 137 },
+          { "name": "Castellum Dracula Rosé", "type": "rosé", "volume": "150ml", "price_mdl": 117 }
+        ],
+        "champagne_prosecco": [
+          { "name": "Bottega Prosecco Gold 0.2L", "price_mdl": 172 },
+          { "name": "Bottega Gold Prosecco DOC Brut 0.75L", "price_mdl": 819 },
+          { "name": "Bottega Rosé Gold Brut Rosé 0.75L", "price_mdl": 819 },
+          { "name": "Moët & Chandon Impérial White Brut", "price_mdl": 1989 },
+          { "name": "Moët & Chandon Ice Impérial White", "price_mdl": 2535 },
+          { "name": "Moët & Chandon Nectar Impérial", "price_mdl": 2808 },
+          { "name": "Ruinart Rosé (375ml)", "price_mdl": 2925 },
+          { "name": "Ruinart Blanc de Blancs 0.75L", "price_mdl": 4641 },
+          { "name": "Dom Pérignon Champagne Brut White", "price_mdl": 7410 }
+        ],
+        "white": [
+          { "name": "Legendary Dracula Castellum Chardonnay", "price_mdl": 507 },
+          { "name": "Dominion Dracula Pinot Gris", "price_mdl": 507 },
+          { "name": "Cloudy Bay Sauvignon Blanc", "price_mdl": 1755 },
+          { "name": "Nobilis Dracula Sauvignon Blanc Fetească Albă", "price_mdl": 858 },
+          { "name": "Jidvei Ana Sauvignon Blanc", "price_mdl": 741 },
+          { "name": "Jidvei Maria Fetească Albă", "price_mdl": 741 }
+        ],
+        "rose": [
+          { "name": "Castellum Dracula Rosé", "price_mdl": 507 },
+          { "name": "Whispering Angel Rosé", "price_mdl": 858 },
+          { "name": "Miraval Côtes de Provence", "price_mdl": 819 }
+        ],
+        "red": [
+          { "name": "Principe Dracula Cabernet Sauvignon", "price_mdl": 585 },
+          { "name": "Penfolds Koonunga Hill", "price_mdl": 546 },
+          { "name": "Castellum Dracula Merlot Cabernet Sauvignon", "price_mdl": 507 },
+          { "name": "Valpolicella Ripasso Classico Superiore BIO", "price_mdl": 897 },
+          { "name": "Amaranta Montepulciano", "price_mdl": 975 }
+        ]
+      },
+
+      "bottle_service": {
+        "note": "Full bottle orders available for spirits. Ask staff for the full bottle menu.",
+        "highlights": [
+          { "name": "Clase Azul Añejo Tequila (700ml)", "price_mdl": 13650 },
+          { "name": "Dom Pérignon Champagne Brut", "price_mdl": 7410 },
+          { "name": "Hennessy XO Cognac (1000ml)", "price_mdl": 11310 },
+          { "name": "Ron Zacapa Centenario XO (700ml)", "price_mdl": 7410 },
+          { "name": "Royal Salute 21 yo (700ml)", "price_mdl": 8190 }
+        ]
+      }
+    }
+  },
+
+  "reservations": {
+    "max_party_size": 20,
+    "booking_window_days": 30,
+    "min_notice_hours": 1,
+    "time_slots": ["10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00","18:00","19:00","20:00","21:00","22:00","23:00"],
+    "sushi_last_order": "22:30",
+    "kitchen_last_order": "23:00",
+    "special_requests_options": [
+      "birthday setup",
+      "high chair for baby",
+      "wheelchair access",
+      "indoor seating preference",
+      "outdoor/terrace seating preference",
+      "hookah / narghilea reservation",
+      "quiet corner table",
+      "large group arrangement",
+      "corporate dinner setup"
+    ],
+    "hookah_note": "If the guest wants hookah (narghilea), note it in special requests. Narghilea is available both indoors and outdoors. Age 18+ only.",
+    "fields_required": ["name", "phone", "date", "time", "party_size"],
+    "fields_optional": ["special_requests", "seating_preference", "hookah_requested"]
+  },
+
+  "human_handoff": {
+    "trigger_phrases_ro": ["manager", "problemă", "reclamație", "vorbi cu cineva", "om real", "personal", "ajutor urgent"],
+    "trigger_phrases_en": ["manager", "complaint", "problem", "speak to someone", "human", "staff", "urgent help"],
+    "trigger_phrases_ru": ["менеджер", "жалоба", "проблема", "поговорить с человеком", "живой человек", "персонал"],
+    "response_ro": "Înțeleg că aveți nevoie de asistență directă. Puteți contacta echipa noastră la 📞 +40731555558 sau vizitați-ne la Calea Floreasca 60, București. Suntem deschiși zilnic 10:00–02:00.",
+    "response_en": "I understand you need direct assistance. Please contact our team at 📞 +40731555558 or visit us at Calea Floreasca 60, Bucharest. We are open daily 10:00–02:00.",
+    "response_ru": "Понимаю, вам нужна прямая помощь. Вы можете связаться с нашей командой по телефону 📞 +40731555558 или посетить нас по адресу Calea Floreasca 60, Бухарест. Мы открыты ежедневно 10:00–02:00."
+  }
+}
