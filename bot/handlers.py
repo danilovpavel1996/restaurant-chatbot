@@ -119,8 +119,8 @@ MESSAGES: dict = {
         ),
         "confirm_prompt": "\n\nConfirmați această rezervare?",
         "confirmed": (
-            "✅ *Rezervare confirmată!*\n\n"
-            "ID: *{res_id}*\n\n{summary}\n\n"
+            "✅ Rezervare confirmată!\n\n"
+            "ID: {res_id}\n\n{summary}\n\n"
             "Vă așteptăm cu drag! 🐉\n"
             "Pentru modificări contactați-ne la 📞 {phone}"
         ),
@@ -185,8 +185,8 @@ MESSAGES: dict = {
         ),
         "confirm_prompt": "\n\nDo you confirm this reservation?",
         "confirmed": (
-            "✅ *Reservation confirmed!*\n\n"
-            "ID: *{res_id}*\n\n{summary}\n\n"
+            "✅ Reservation confirmed!\n\n"
+            "ID: {res_id}\n\n{summary}\n\n"
             "We look forward to welcoming you! 🐉\n"
             "For changes please call us at 📞 {phone}"
         ),
@@ -251,8 +251,8 @@ MESSAGES: dict = {
         ),
         "confirm_prompt": "\n\nПодтверждаете бронирование?",
         "confirmed": (
-            "✅ *Бронирование подтверждено!*\n\n"
-            "ID: *{res_id}*\n\n{summary}\n\n"
+            "✅ Бронирование подтверждено!\n\n"
+            "ID: {res_id}\n\n{summary}\n\n"
             "Будем рады вас видеть! 🐉\n"
             "Для изменений звоните: 📞 {phone}"
         ),
@@ -643,7 +643,7 @@ def _format_summary(data: dict, lang: str) -> str:
 
     if lang == "en":
         return (
-            f"📋 *Reservation summary:*\n"
+            f"📋 Reservation summary:\n"
             f"• Name: {data.get('name', '')}\n"
             f"• Date: {data.get('date', '')}\n"
             f"• Time: {data.get('time', '')}\n"
@@ -654,7 +654,7 @@ def _format_summary(data: dict, lang: str) -> str:
         )
     elif lang == "ru":
         return (
-            f"📋 *Сводка бронирования:*\n"
+            f"📋 Сводка бронирования:\n"
             f"• Имя: {data.get('name', '')}\n"
             f"• Дата: {data.get('date', '')}\n"
             f"• Время: {data.get('time', '')}\n"
@@ -665,7 +665,7 @@ def _format_summary(data: dict, lang: str) -> str:
         )
     else:
         return (
-            f"📋 *Sumar rezervare:*\n"
+            f"📋 Sumar rezervare:\n"
             f"• Nume: {data.get('name', '')}\n"
             f"• Data: {data.get('date', '')}\n"
             f"• Ora: {data.get('time', '')}\n"
@@ -705,7 +705,7 @@ async def _notify_manager(context: ContextTypes.DEFAULT_TYPE, reservation: dict)
     if not MANAGER_CHAT_ID:
         return
     msg = (
-        f"🔔 *New Reservation — {reservation['id']}*\n\n"
+        f"🔔 New Reservation — {reservation['id']}\n\n"
         f"👤 Name: {reservation['name']}\n"
         f"📅 Date: {reservation['date']}\n"
         f"🕐 Time: {reservation['time']}\n"
@@ -720,7 +720,6 @@ async def _notify_manager(context: ContextTypes.DEFAULT_TYPE, reservation: dict)
         await context.bot.send_message(
             chat_id=MANAGER_CHAT_ID,
             text=msg,
-            parse_mode="Markdown",
         )
     except Exception as exc:
         logger.error("Failed to notify manager: %s", exc)
@@ -741,7 +740,7 @@ async def _do_confirm(target, context: ContextTypes.DEFAULT_TYPE, state_data: di
     _reset_reservation(state_data)
     summary = _format_summary(data, lang)
     text = _msg(lang, "confirmed", res_id=res_id, summary=summary, phone=PHONE_CONTACT)
-    await target.reply_text(text, parse_mode="Markdown")
+    await target.reply_text(text)
     if reservation:
         await _notify_manager(context, reservation)
         append_reservation(reservation)
@@ -872,7 +871,6 @@ async def _handle_reservation_text(
         summary = _format_summary(data, lang)
         await msg.reply_text(
             summary + _msg(lang, "confirm_prompt"),
-            parse_mode="Markdown",
             reply_markup=_confirm_keyboard(lang),
         )
 
@@ -887,7 +885,6 @@ async def _handle_reservation_text(
             summary = _format_summary(data, lang)
             await msg.reply_text(
                 summary + _msg(lang, "confirm_prompt"),
-                parse_mode="Markdown",
                 reply_markup=_confirm_keyboard(lang),
             )
 
