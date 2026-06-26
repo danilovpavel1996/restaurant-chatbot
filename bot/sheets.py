@@ -44,11 +44,12 @@ def append_reservation(reservation: dict) -> None:
             reservation.get("time", ""),
             reservation.get("party_size", ""),
             reservation.get("phone", ""),
-            reservation.get("seating_preference", ""),
+            reservation.get("seating_preference", reservation.get("seating", "")),
             reservation.get("hookah") or "None",
             reservation.get("special_requests") or "None",
             reservation.get("created_at", ""),
         ]
+        logger.info(f"Appending to Sheets: {row}")
         sheet.append_row(row)
         logger.info("Reservation %s saved to Google Sheets", reservation.get("id"))
     except Exception as exc:
