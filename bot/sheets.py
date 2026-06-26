@@ -3,6 +3,7 @@
 import json
 import logging
 import os
+import time
 from datetime import datetime, timedelta
 
 import gspread
@@ -72,6 +73,23 @@ def append_reservation(reservation: dict) -> None:
         logger.error("Failed to save to Google Sheets: %s", exc)
 
 
+def _init_occupancy_sheet(occ_sheet, slots: list[str], tables: list[dict]) -> list[list]:
+    """Build the 30-day × tables grid and write it in one batch. Returns the written rows."""
+    header = ["Date", "Table", "Capacity", "Location"] + slots
+    rows = [header]
+    today = datetime.now().date()
+    for day_offset in range(30):
+        date_str = (today + timedelta(days=day_offset)).strftime("%d.%m.%Y")
+        for table in tables:
+            rows.append(
+                [date_str, table["id"], table["capacity"], table["location"]]
+                + ["FREE"] * len(slots)
+            )
+    occ_sheet.clear()
+    occ_sheet.update("A1", rows)
+    return rows
+
+
 def update_occupancy_sheet(reservation: dict) -> None:
     """Mark the reserved slot in the Occupancy tab with customer name + ID."""
     try:
@@ -86,29 +104,18 @@ def update_occupancy_sheet(reservation: dict) -> None:
             occ_sheet = spreadsheet.add_worksheet(title="Occupancy", rows=500, cols=30)
 
         all_values = occ_sheet.get_all_values()
-        if not all_values or all_values[0][0] != "Date":
-            tables = _load_tables_config()
-            header = ["Date", "Table", "Capacity", "Location"] + _OCCUPANCY_SLOTS
-            rows = [header]
-            today = datetime.now().date()
-            for day_offset in range(30):
-                day = today + timedelta(days=day_offset)
-                date_str = day.strftime("%d.%m.%Y")
-                for table in tables:
-                    rows.append(
-                        [date_str, table["id"], table["capacity"], table["location"]]
-                        + ["FREE"] * len(_OCCUPANCY_SLOTS)
-                    )
-            occ_sheet.clear()
-            occ_sheet.update("A1", rows)
-            all_values = occ_sheet.get_all_values()
 
-        # Normalise date to DD.MM.YYYY
+        # Always check the header; initialize if missing or malformed
+        if not all_values or not all_values[0] or all_values[0][0] != "Date":
+            tables = _load_tables_config()
+            all_values = _init_occupancy_sheet(occ_sheet, _OCCUPANCY_SLOTS, tables)
+
+        # Normalise reservation date to DD.MM.YYYY (grid always uses this format)
         res_date = reservation.get("date", "")
         try:
             res_date = datetime.strptime(res_date, "%Y-%m-%d").strftime("%d.%m.%Y")
         except ValueError:
-            pass
+            pass  # already DD.MM.YYYY
 
         table_id  = reservation.get("table_id", "")
         time_slot = reservation.get("time", "")
@@ -122,7 +129,7 @@ def update_occupancy_sheet(reservation: dict) -> None:
             return
 
         for row_idx, row in enumerate(all_values[1:], start=2):
-            if row[0] == res_date and row[1] == table_id:
+            if len(row) > 1 and row[0] == res_date and row[1] == table_id:
                 occ_sheet.update_cell(row_idx, time_col_idx + 1, cell_val)
                 logger.info("Occupancy updated: %s %s %s → %s", res_date, table_id, time_slot, cell_val)
                 return
@@ -134,23 +141,34 @@ def update_occupancy_sheet(reservation: dict) -> None:
 
 def init_tables_sheet() -> None:
     """Write the Tables tab with the current table config. Called once at startup."""
+    client = _get_client()
+    if not client:
+        return
     try:
-        client = _get_client()
-        if not client:
-            return
         spreadsheet = client.open_by_key(SPREADSHEET_ID)
-
-        try:
-            t_sheet = spreadsheet.worksheet("Tables")
-        except gspread.exceptions.WorksheetNotFound:
-            t_sheet = spreadsheet.add_worksheet(title="Tables", rows=20, cols=5)
-
-        tables = _load_tables_config()
-        rows = [["Table ID", "Capacity", "Location", "Notes"]]
-        for t in tables:
-            rows.append([t["id"], t["capacity"], t["location"], t.get("notes", "")])
-        t_sheet.clear()
-        t_sheet.update("A1", rows)
-        logger.info("Tables sheet initialized (%d tables)", len(tables))
     except Exception as exc:
-        logger.error("Failed to init Tables sheet: %s", exc)
+        logger.error("Failed to open spreadsheet: %s", exc)
+        return
+
+    try:
+        t_sheet = spreadsheet.worksheet("Tables")
+    except gspread.exceptions.WorksheetNotFound:
+        t_sheet = spreadsheet.add_worksheet(title="Tables", rows=20, cols=5)
+
+    tables = _load_tables_config()
+    rows = [["Table ID", "Capacity", "Location", "Notes"]]
+    for t in tables:
+        rows.append([t["id"], t["capacity"], t["location"], t.get("notes", "")])
+
+    for attempt in range(3):
+        try:
+            t_sheet.clear()
+            t_sheet.update("A1", rows)
+            logger.info("Tables sheet initialized (%d tables)", len(tables))
+            break
+        except Exception as exc:
+            if attempt < 2:
+                logger.warning("Tables sheet write failed (attempt %d): %s", attempt + 1, exc)
+                time.sleep(2)
+            else:
+                logger.error("Failed to init Tables sheet after 3 attempts: %s", exc)
