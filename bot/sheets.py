@@ -46,6 +46,46 @@ def _load_tables_config() -> list[dict]:
         return json.load(f)["tables"]
 
 
+def get_occupancy() -> dict:
+    """
+    Read the Occupancy tab and return a nested dict:
+    { "DD.MM.YYYY": { "T01": { "10:00": "FREE", "11:00": "Paul (RES-001)", ... }, ... } }
+    Returns {} on any error or if the sheet is not yet initialised.
+    """
+    try:
+        client = _get_client()
+        if not client:
+            return {}
+        spreadsheet = client.open_by_key(SPREADSHEET_ID)
+        occ_sheet = spreadsheet.worksheet("Occupancy")
+        all_values = occ_sheet.get_all_values()
+        if not all_values or all_values[0][0] != "Date":
+            return {}
+
+        header = all_values[0]          # ['Date','Table','Capacity','Location','10:00',...]
+        slot_start_idx = 4
+
+        occupancy: dict = {}
+        for row in all_values[1:]:
+            if len(row) < slot_start_idx:
+                continue
+            date_val = row[0]
+            table_id = row[1]
+            if not date_val or not table_id:
+                continue
+            if date_val not in occupancy:
+                occupancy[date_val] = {}
+            occupancy[date_val][table_id] = {}
+            for i, slot in enumerate(header[slot_start_idx:], start=slot_start_idx):
+                value = row[i] if i < len(row) else "FREE"
+                occupancy[date_val][table_id][slot] = value if value else "FREE"
+
+        return occupancy
+    except Exception as exc:
+        logger.error("Failed to read occupancy: %s", exc)
+        return {}
+
+
 def append_reservation(reservation: dict) -> None:
     try:
         client = _get_client()

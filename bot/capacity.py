@@ -1,4 +1,4 @@
-"""Table capacity management — availability checks and slot filtering."""
+"""Table capacity management — availability checks using Google Sheets Occupancy data."""
 
 import json
 import os
@@ -14,6 +14,7 @@ def load_tables() -> list[dict]:
 
 
 def load_reservations() -> list[dict]:
+    """Kept for any local fallback logic; primary availability uses Occupancy sheet."""
     if not os.path.exists(RESERVATIONS_FILE):
         return []
     with open(RESERVATIONS_FILE, "r", encoding="utf-8") as f:
@@ -21,29 +22,74 @@ def load_reservations() -> list[dict]:
     return [r for r in data.get("reservations", []) if r.get("status") != "cancelled"]
 
 
-def find_available_table(
+def _time_to_minutes(t: str) -> int:
+    h, m = t.split(":")
+    return int(h) * 60 + int(m)
+
+
+def _all_slots() -> list[str]:
+    from .utils import load_config
+    config = load_config()
+    return config.get("reservations", {}).get("time_slots", [])
+
+
+def get_available_slots_from_occupancy(
+    date: str,
+    party_size: int,
+    preferred_location: Optional[str] = None,
+) -> list[str]:
+    """
+    Return slots where at least one table with capacity >= party_size shows 'FREE'
+    in the Occupancy sheet. If preferred_location is set, only considers tables at
+    that location.
+    """
+    from .sheets import get_occupancy
+
+    tables = load_tables()
+    occupancy = get_occupancy()
+    date_occ = occupancy.get(date, {})
+    all_slots = _all_slots()
+
+    available = []
+    for slot in all_slots:
+        for table in tables:
+            if table["capacity"] < party_size:
+                continue
+            if preferred_location and table["location"] != preferred_location:
+                continue
+            cell = date_occ.get(table["id"], {}).get(slot, "FREE")
+            if cell.strip().upper() == "FREE":
+                available.append(slot)
+                break
+
+    return available
+
+
+def find_available_table_from_occupancy(
     date: str,
     time: str,
     party_size: int,
     preferred_location: Optional[str] = None,
 ) -> Optional[dict]:
     """
-    Return the smallest suitable table free at date+time, or None if fully booked.
-    Prefers preferred_location when set (indoor/terrace).
+    Find the best available table using Occupancy sheet data.
+    Prefers location match, then smallest fitting capacity.
+    Returns None if nothing is free.
     """
+    from .sheets import get_occupancy
+
     tables = load_tables()
-    reservations = load_reservations()
+    occupancy = get_occupancy()
+    date_occ = occupancy.get(date, {})
 
-    booked_ids = {
-        r["table_id"]
-        for r in reservations
-        if r.get("date") == date and r.get("time") == time and r.get("table_id")
-    }
+    suitable = []
+    for table in tables:
+        if table["capacity"] < party_size:
+            continue
+        cell = date_occ.get(table["id"], {}).get(time, "FREE")
+        if cell.strip().upper() == "FREE":
+            suitable.append(table)
 
-    suitable = [
-        t for t in tables
-        if t["capacity"] >= party_size and t["id"] not in booked_ids
-    ]
     if not suitable:
         return None
 
@@ -55,36 +101,33 @@ def find_available_table(
     return suitable[0]
 
 
-def _time_to_minutes(t: str) -> int:
-    h, m = t.split(":")
-    return int(h) * 60 + int(m)
+def get_available_slots_by_location(date: str, party_size: int) -> dict:
+    """
+    Return available slots split by location:
+    { 'indoor': [...], 'terrace': [...], 'any': [...] }
+    """
+    indoor_slots  = get_available_slots_from_occupancy(date, party_size, "indoor")
+    terrace_slots = get_available_slots_from_occupancy(date, party_size, "terrace")
+    any_slots     = sorted(set(indoor_slots + terrace_slots), key=_time_to_minutes)
+    return {"indoor": indoor_slots, "terrace": terrace_slots, "any": any_slots}
 
 
-def get_available_slots(
-    date: str,
-    party_size: int,
-    preferred_location: Optional[str] = None,
-) -> list[str]:
-    """Return time slots where at least one suitable table is free."""
-    from .utils import load_config
-    config = load_config()
-    all_slots: list[str] = config.get("reservations", {}).get("time_slots", [])
-
-    return [
-        slot for slot in all_slots
-        if find_available_table(date, slot, party_size, preferred_location)
-    ]
-
-
-def find_nearest_available_slot(
+def find_nearest_available_from_occupancy(
     date: str,
     requested_time: str,
     party_size: int,
     preferred_location: Optional[str] = None,
-) -> Optional[str]:
-    """Return the available slot closest in time to requested_time, or None."""
-    available = get_available_slots(date, party_size, preferred_location)
-    if not available:
-        return None
+) -> dict:
+    """
+    Find nearest FREE slot for both indoor and terrace around requested_time.
+    Returns: { 'indoor': 'HH:MM' or None, 'terrace': 'HH:MM' or None }
+    """
     requested_mins = _time_to_minutes(requested_time)
-    return min(available, key=lambda s: abs(_time_to_minutes(s) - requested_mins))
+
+    indoor_slots  = get_available_slots_from_occupancy(date, party_size, "indoor")
+    terrace_slots = get_available_slots_from_occupancy(date, party_size, "terrace")
+
+    nearest_indoor  = min(indoor_slots,  key=lambda s: abs(_time_to_minutes(s) - requested_mins)) if indoor_slots  else None
+    nearest_terrace = min(terrace_slots, key=lambda s: abs(_time_to_minutes(s) - requested_mins)) if terrace_slots else None
+
+    return {"indoor": nearest_indoor, "terrace": nearest_terrace}
