@@ -911,52 +911,66 @@ def _build_availability_picker(
     indoor_picks  = _nearby_slots(indoor_slots,  requested_time)
     terrace_picks = _nearby_slots(terrace_slots, requested_time)
 
-    rows: list[list[InlineKeyboardButton]] = []
+    # Column header row (non-clickable labels)
+    col_indoor  = {"ro": "🏠 Interior", "en": "🏠 Indoor",  "ru": "🏠 Зал"}.get(lang,     "🏠 Indoor")
+    col_terrace = {"ro": "🌿 Terasă",   "en": "🌿 Terrace", "ru": "🌿 Терраса"}.get(lang, "🌿 Terrace")
+    rows: list[list[InlineKeyboardButton]] = [[
+        InlineKeyboardButton(col_indoor,  callback_data="noop"),
+        InlineKeyboardButton(col_terrace, callback_data="noop"),
+    ]]
 
-    # Fully-booked placeholder buttons (shown when a location has zero free slots that day)
-    btn_indoor_label  = {"ro": "Interior",  "en": "Indoor",  "ru": "Зал"}.get(lang,     "Indoor")
-    btn_terrace_label = {"ro": "Terasă",    "en": "Terrace", "ru": "Терраса"}.get(lang, "Terrace")
-
-    if not indoor_slots:
-        rows.append([InlineKeyboardButton(
-            f"🏠 {btn_indoor_label} — fully booked", callback_data="noop_indoor"
-        )])
-    if not terrace_slots:
-        rows.append([InlineKeyboardButton(
-            f"🌿 {btn_terrace_label} — fully booked", callback_data="noop_terrace"
-        )])
-
-    # Pair slots column by column
-    max_len = max(len(indoor_picks), len(terrace_picks), 0)
-    for i in range(max_len):
-        row: list[InlineKeyboardButton] = []
-        if i < len(indoor_picks):
-            t = indoor_picks[i]
-            row.append(InlineKeyboardButton(f"{t} 🏠", callback_data=f"pick_indoor_{t}"))
-        if i < len(terrace_picks):
-            t = terrace_picks[i]
-            row.append(InlineKeyboardButton(f"{t} 🌿", callback_data=f"pick_terrace_{t}"))
-        if row:
-            rows.append(row)
+    # Slot rows: up to 4, always two columns, "—" fills an empty cell
+    max_len = max(len(indoor_picks), len(terrace_picks), 1)
+    for i in range(min(max_len, 4)):
+        i_time = indoor_picks[i]  if i < len(indoor_picks)  else None
+        t_time = terrace_picks[i] if i < len(terrace_picks) else None
+        rows.append([
+            InlineKeyboardButton(i_time if i_time else "—",
+                                 callback_data=f"pick_indoor_{i_time}" if i_time else "noop"),
+            InlineKeyboardButton(t_time if t_time else "—",
+                                 callback_data=f"pick_terrace_{t_time}" if t_time else "noop"),
+        ])
 
     header = _picker_header(lang, requested_time, indoor_ok, terrace_ok)
     return header, InlineKeyboardMarkup(rows)
 
 
-async def _show_seating_prompt(target, state_data: dict) -> None:
-    """Show [Indoor] [Terrace] buttons — only called when both locations are free at the chosen time."""
+async def _show_seating_prompt(
+    target, state_data: dict, indoor_ok: bool = True, terrace_ok: bool = True
+) -> None:
+    """Show [Indoor] [Terrace] buttons. If one location is unavailable at the chosen time,
+    prepend a warning note — but always show both buttons so the user can still pick either."""
     lang = state_data["language"]
+    chosen_time = state_data["data"].get("time", "")
+
+    if not terrace_ok:
+        note = {
+            "ro": f"⚠️ Notă: terasa este complet ocupată la {chosen_time}.",
+            "en": f"⚠️ Note: the terrace is fully booked at {chosen_time}.",
+            "ru": f"⚠️ Примечание: терраса полностью занята в {chosen_time}.",
+        }.get(lang)
+    elif not indoor_ok:
+        note = {
+            "ro": f"⚠️ Notă: interiorul este complet ocupat la {chosen_time}.",
+            "en": f"⚠️ Note: the indoor area is fully booked at {chosen_time}.",
+            "ru": f"⚠️ Примечание: зал полностью занят в {chosen_time}.",
+        }.get(lang)
+    else:
+        note = None
+
     ask_seating = {
         "ro": "Preferați locul interior sau terasă?",
         "en": "Do you prefer indoor or terrace seating?",
         "ru": "Предпочитаете место внутри или на террасе?",
     }.get(lang, "Do you prefer indoor or terrace seating?")
+
     keyboard = InlineKeyboardMarkup([[
         InlineKeyboardButton(get_button_text("indoor",  lang), callback_data="seating_indoor"),
         InlineKeyboardButton(get_button_text("terrace", lang), callback_data="seating_terrace"),
     ]])
+    full_text = f"{note}\n{ask_seating}" if note else ask_seating
     state_data["state"] = "awaiting_seating"
-    await target.reply_text(ask_seating, reply_markup=keyboard)
+    await target.reply_text(full_text, reply_markup=keyboard)
 
 
 # ── Reservation state machine ──────────────────────────────────────────────────
@@ -1043,15 +1057,7 @@ async def _handle_reservation_text(
                 notes += _msg(lang, "note_kitchen")
             if notes:
                 await msg.reply_text(notes.strip())
-            if indoor_ok and terrace_ok:
-                await _show_seating_prompt(msg, state_data)
-            else:
-                picker_text, picker_kb = _build_availability_picker(
-                    data.get("date", ""), data.get("party_size", 1), normalised, lang,
-                    indoor_ok=indoor_ok, terrace_ok=terrace_ok,
-                )
-                state_data["state"] = "awaiting_time_confirmation"
-                await msg.reply_text(picker_text, reply_markup=picker_kb)
+            await _show_seating_prompt(msg, state_data, indoor_ok=indoor_ok, terrace_ok=terrace_ok)
         else:
             # Time typed but not in any free slot — both locations unavailable at that time
             picker_text, picker_kb = _build_availability_picker(
@@ -1133,14 +1139,28 @@ async def _handle_reservation_text(
         await msg.reply_text(_msg(lang, "ask_special_requests"), parse_mode="Markdown")
 
     elif state == "awaiting_seating":
-        # Only reached when both locations were available — the picker handles conflicts.
         lower = text.lower()
         if any(w in lower for w in ["interior", "indoor", "внутри", "зал", "внут"]):
-            await _after_seating(msg, state_data, "indoor")
+            chosen_loc = "indoor"
         elif any(w in lower for w in ["terasa", "terasă", "terrace", "терраса", "улица", "откры"]):
-            await _after_seating(msg, state_data, "terrace")
+            chosen_loc = "terrace"
         else:
             await _show_seating_prompt(msg, state_data)
+            return
+
+        slots_by_loc = data.get("slots_by_location", {})
+        chosen_time  = data.get("time", "")
+        loc_ok = not slots_by_loc or chosen_time in slots_by_loc.get(chosen_loc, [])
+        if loc_ok:
+            await _after_seating(msg, state_data, chosen_loc)
+        else:
+            picker_text, picker_kb = _build_availability_picker(
+                data.get("date", ""), data.get("party_size", 1), chosen_time, lang,
+                indoor_ok=(chosen_loc != "indoor"),
+                terrace_ok=(chosen_loc != "terrace"),
+            )
+            state_data["state"] = "awaiting_time_confirmation"
+            await msg.reply_text(picker_text, reply_markup=picker_kb)
 
     elif state == "awaiting_hookah":
         lower = text.lower()
@@ -1397,14 +1417,9 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
 
-    # noop_ buttons are "fully booked" placeholders — answer with a toast and stop
-    if query.data.startswith("noop_"):
-        noop_msg = {
-            "en": "No available slots for this option",
-            "ro": "Nu există locuri disponibile pentru această opțiune",
-            "ru": "Нет доступных мест для этого варианта",
-        }.get(_get_state(update.effective_user.id).get("language", "en"), "No available slots")
-        await query.answer(noop_msg, show_alert=False)
+    # noop buttons (column headers, empty cells, fully-booked placeholders) — answer silently
+    if query.data == "noop" or query.data.startswith("noop_"):
+        await query.answer()
         return
 
     await query.answer()  # dismiss the loading spinner
@@ -1481,19 +1496,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 notes += _msg(lang, "note_kitchen")
             if notes:
                 await msg.reply_text(notes.strip())
-            if indoor_ok and terrace_ok:
-                await _show_seating_prompt(msg, state_data)
-            else:
-                picker_text, picker_kb = _build_availability_picker(
-                    state_data["data"].get("date", ""),
-                    state_data["data"].get("party_size", 1),
-                    chosen_time,
-                    lang,
-                    indoor_ok=indoor_ok,
-                    terrace_ok=terrace_ok,
-                )
-                state_data["state"] = "awaiting_time_confirmation"
-                await msg.reply_text(picker_text, reply_markup=picker_kb)
+            await _show_seating_prompt(msg, state_data, indoor_ok=indoor_ok, terrace_ok=terrace_ok)
 
     # ── Availability picker selection (time + seating in one tap) ─────────────
     elif data.startswith("pick_"):
@@ -1510,11 +1513,26 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
                 await msg.reply_text(notes.strip())
             await _after_seating(msg, state_data, location)
 
-    # ── Seating selection (only when both locations are free) ─────────────────
+    # ── Seating selection ─────────────────────────────────────────────────────
     elif data in ("seating_indoor", "seating_terrace"):
         if state_data["state"] == "awaiting_seating":
-            chosen_loc = data.split("_", 1)[1]
-            await _after_seating(msg, state_data, chosen_loc)
+            chosen_loc   = data.split("_", 1)[1]
+            slots_by_loc = state_data["data"].get("slots_by_location", {})
+            chosen_time  = state_data["data"].get("time", "")
+            loc_ok = not slots_by_loc or chosen_time in slots_by_loc.get(chosen_loc, [])
+            if loc_ok:
+                await _after_seating(msg, state_data, chosen_loc)
+            else:
+                picker_text, picker_kb = _build_availability_picker(
+                    state_data["data"].get("date", ""),
+                    state_data["data"].get("party_size", 1),
+                    chosen_time,
+                    lang,
+                    indoor_ok=(chosen_loc != "indoor"),
+                    terrace_ok=(chosen_loc != "terrace"),
+                )
+                state_data["state"] = "awaiting_time_confirmation"
+                await msg.reply_text(picker_text, reply_markup=picker_kb)
 
     # ── Hookah selection ──────────────────────────────────────────────────────
     elif data.startswith("hookah_"):
