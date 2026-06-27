@@ -854,8 +854,44 @@ async def _do_confirm(target, context: ContextTypes.DEFAULT_TYPE, state_data: di
         append_reservation(reservation)
 
 
+async def _handle_seating_relocation(target, state_data: dict, chosen_loc: str) -> None:
+    """
+    The user picked a location that is fully booked at their chosen time.
+    Find the nearest available slot for that location and ask if they want to switch.
+    """
+    lang = state_data["language"]
+    data = state_data["data"]
+    chosen_time = data.get("time", "")
+    party_size  = data.get("party_size", 1)
+    res_date    = data.get("date", "")
+
+    nearest = find_nearest_available_from_occupancy(res_date, chosen_time, party_size)
+    nearest_time = nearest.get(chosen_loc)
+
+    if not nearest_time:
+        # No slots at all for this location — show seating prompt again
+        await _show_seating_prompt(target, state_data)
+        return
+
+    loc_label = {
+        "indoor":  {"ro": "Interior", "en": "Indoor",  "ru": "Зал"},
+        "terrace": {"ro": "Terasă",   "en": "Terrace", "ru": "Терраса"},
+    }.get(chosen_loc, {}).get(lang, chosen_loc)
+
+    reloc_msg = {
+        "ro": f"Cel mai apropiat slot disponibil pentru {loc_label} este {nearest_time}. Rezervăm la {nearest_time}? (da / nu)",
+        "en": f"The nearest available time for {loc_label} is {nearest_time}. Shall we book at {nearest_time}? (yes / no)",
+        "ru": f"Ближайшее доступное время для {loc_label} — {nearest_time}. Забронируем на {nearest_time}? (да / нет)",
+    }.get(lang)
+
+    data["_relocation_time"]     = nearest_time
+    data["_relocation_location"] = chosen_loc
+    state_data["state"] = "awaiting_time_relocation_confirmation"
+    await target.reply_text(reloc_msg)
+
+
 async def _show_seating_prompt(target, state_data: dict) -> None:
-    """Show seating options, hiding locations that are fully booked at the chosen time."""
+    """Always show both seating buttons; add a contextual note if a location is fully booked."""
     lang = state_data["language"]
     data = state_data["data"]
     slots_by_loc = data.get("slots_by_location", {})
@@ -864,27 +900,33 @@ async def _show_seating_prompt(target, state_data: dict) -> None:
     indoor_ok  = not slots_by_loc or chosen_time in slots_by_loc.get("indoor",  [])
     terrace_ok = not slots_by_loc or chosen_time in slots_by_loc.get("terrace", [])
 
-    _indoor_label  = {"ro": "Interior", "en": "Indoor",  "ru": "Внутри"}.get(lang, "Indoor")
-    _terrace_label = {"ro": "Terasă",   "en": "Terrace", "ru": "Терраса"}.get(lang, "Terrace")
+    # Always show both buttons
+    keyboard = InlineKeyboardMarkup([[
+        InlineKeyboardButton(get_button_text("indoor",  lang), callback_data="seating_indoor"),
+        InlineKeyboardButton(get_button_text("terrace", lang), callback_data="seating_terrace"),
+    ]])
 
-    note_lines = []
-    buttons    = []
-    if indoor_ok:
-        buttons.append(InlineKeyboardButton(get_button_text("indoor",  lang), callback_data="seating_indoor"))
+    # Build contextual note for any booked location
+    if not indoor_ok and not terrace_ok:
+        note = {
+            "ro": f"⚠️ Atât interiorul cât și terasa sunt ocupate la {chosen_time}. Alegeți preferința și vă vom găsi cel mai apropiat slot.",
+            "en": f"⚠️ Both indoor and terrace are fully booked at {chosen_time}. Please choose a seating preference and we'll find the nearest available time.",
+            "ru": f"⚠️ И зал, и терраса заняты в {chosen_time}. Выберите предпочтение и мы найдем ближайшее время.",
+        }.get(lang)
+    elif not terrace_ok:
+        note = {
+            "ro": f"⚠️ Terasa este ocupată la {chosen_time}. Puteți alege Terasă și vă vom găsi cel mai apropiat slot disponibil.",
+            "en": f"⚠️ Terrace is fully booked at {chosen_time}. You can still choose Terrace and we'll find you the nearest available time.",
+            "ru": f"⚠️ Терраса занята в {chosen_time}. Вы можете выбрать Террасу и мы найдем ближайшее свободное время.",
+        }.get(lang)
+    elif not indoor_ok:
+        note = {
+            "ro": f"⚠️ Interiorul este ocupat la {chosen_time}. Puteți alege Interior și vă vom găsi cel mai apropiat slot disponibil.",
+            "en": f"⚠️ Indoor is fully booked at {chosen_time}. You can still choose Indoor and we'll find you the nearest available time.",
+            "ru": f"⚠️ Зал занят в {chosen_time}. Вы можете выбрать Зал и мы найдем ближайшее свободное время.",
+        }.get(lang)
     else:
-        note_lines.append({
-            "ro": f"🏠 {_indoor_label} este complet rezervat la această oră.",
-            "en": f"🏠 {_indoor_label} is fully booked at this time.",
-            "ru": f"🏠 {_indoor_label} полностью занят на это время.",
-        }.get(lang))
-    if terrace_ok:
-        buttons.append(InlineKeyboardButton(get_button_text("terrace", lang), callback_data="seating_terrace"))
-    else:
-        note_lines.append({
-            "ro": f"🌿 {_terrace_label} este complet rezervată la această oră.",
-            "en": f"🌿 {_terrace_label} is fully booked at this time.",
-            "ru": f"🌿 {_terrace_label} полностью занята на это время.",
-        }.get(lang))
+        note = None
 
     ask_seating = {
         "ro": "Preferați locul interior sau terasă?",
@@ -892,8 +934,7 @@ async def _show_seating_prompt(target, state_data: dict) -> None:
         "ru": "Предпочитаете место внутри или на террасе?",
     }.get(lang, "Do you prefer indoor or terrace seating?")
 
-    full_text = ("\n".join(note_lines) + "\n" + ask_seating) if note_lines else ask_seating
-    keyboard  = InlineKeyboardMarkup([buttons]) if buttons else None
+    full_text = f"{note}\n{ask_seating}" if note else ask_seating
     state_data["state"] = "awaiting_seating"
     await target.reply_text(full_text, reply_markup=keyboard)
 
@@ -1093,33 +1134,53 @@ async def _handle_reservation_text(
         lower        = text.lower()
         slots_by_loc = data.get("slots_by_location", {})
         chosen_time  = data.get("time", "")
-        indoor_ok    = not slots_by_loc or chosen_time in slots_by_loc.get("indoor",  [])
-        terrace_ok   = not slots_by_loc or chosen_time in slots_by_loc.get("terrace", [])
 
         if any(w in lower for w in ["interior", "indoor", "внутри", "зал", "внут"]):
-            if indoor_ok:
-                await _after_seating(msg, state_data, "indoor")
-            else:
-                unavail = {
-                    "ro": "Interiorul este complet rezervat la această oră.",
-                    "en": "Indoor is fully booked at this time.",
-                    "ru": "Зал полностью занят на это время.",
-                }.get(lang, "Indoor is fully booked at this time.")
-                await msg.reply_text(unavail)
-                await _show_seating_prompt(msg, state_data)
+            chosen_loc = "indoor"
         elif any(w in lower for w in ["terasa", "terasă", "terrace", "терраса", "улица", "откры"]):
-            if terrace_ok:
-                await _after_seating(msg, state_data, "terrace")
-            else:
-                unavail = {
-                    "ro": "Terasa este complet rezervată la această oră.",
-                    "en": "Terrace is fully booked at this time.",
-                    "ru": "Терраса полностью занята на это время.",
-                }.get(lang, "Terrace is fully booked at this time.")
-                await msg.reply_text(unavail)
-                await _show_seating_prompt(msg, state_data)
+            chosen_loc = "terrace"
         else:
             await _show_seating_prompt(msg, state_data)
+            return
+
+        loc_ok = not slots_by_loc or chosen_time in slots_by_loc.get(chosen_loc, [])
+        if loc_ok:
+            await _after_seating(msg, state_data, chosen_loc)
+        else:
+            await _handle_seating_relocation(msg, state_data, chosen_loc)
+
+    elif state == "awaiting_time_relocation_confirmation":
+        lower        = text.lower()
+        nearest_time = data.get("_relocation_time", "")
+        pending_loc  = data.get("_relocation_location", "")
+        slots_by_loc = data.get("slots_by_location", {})
+        available    = slots_by_loc.get("any") or TIME_SLOTS
+
+        if any(w in lower for w in ["da", "yes", "да", "ok", "y", "d"]):
+            data["time"] = nearest_time
+            data.pop("_relocation_time",     None)
+            data.pop("_relocation_location", None)
+            await _after_seating(msg, state_data, pending_loc)
+        elif any(w in lower for w in ["nu", "no", "нет", "n"]):
+            data.pop("_relocation_time",     None)
+            data.pop("_relocation_location", None)
+            ask_time_text = {
+                "ro": "Ce oră preferați?",
+                "en": "What time would you prefer?",
+                "ru": "Какое время вы предпочитаете?",
+            }.get(lang, "What time would you prefer?")
+            state_data["state"] = "awaiting_time"
+            await msg.reply_text(ask_time_text, reply_markup=_slots_keyboard(available))
+        else:
+            # Re-show the confirmation
+            loc_label = {"indoor": {"ro": "Interior", "en": "Indoor", "ru": "Зал"},
+                         "terrace": {"ro": "Terasă", "en": "Terrace", "ru": "Терраса"}}.get(pending_loc, {}).get(lang, pending_loc)
+            reloc_msg = {
+                "ro": f"Cel mai apropiat slot disponibil pentru {loc_label} este {nearest_time}. Rezervăm la {nearest_time}? (da / nu)",
+                "en": f"The nearest available time for {loc_label} is {nearest_time}. Shall we book at {nearest_time}? (yes / no)",
+                "ru": f"Ближайшее доступное время для {loc_label} — {nearest_time}. Забронируем на {nearest_time}? (да / нет)",
+            }.get(lang)
+            await msg.reply_text(reloc_msg)
 
     elif state == "awaiting_hookah":
         lower = text.lower()
@@ -1320,7 +1381,8 @@ async def modify_command(update: Update, _ctx: ContextTypes.DEFAULT_TYPE) -> Non
 _RESERVATION_STATES = {
     "awaiting_name", "awaiting_date", "awaiting_date_confirmation",
     "awaiting_time", "awaiting_time_confirmation",
-    "awaiting_party_size", "awaiting_phone", "awaiting_seating", "awaiting_hookah",
+    "awaiting_party_size", "awaiting_seating", "awaiting_time_relocation_confirmation",
+    "awaiting_hookah", "awaiting_phone",
     "awaiting_special_requests", "awaiting_confirmation",
 }
 
@@ -1465,8 +1527,14 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     # ── Seating selection ─────────────────────────────────────────────────────
     elif data in ("seating_indoor", "seating_terrace"):
         if state_data["state"] == "awaiting_seating":
-            seating = data.split("_", 1)[1]  # "indoor" or "terrace"
-            await _after_seating(msg, state_data, seating)
+            chosen_loc   = data.split("_", 1)[1]  # "indoor" or "terrace"
+            slots_by_loc = state_data["data"].get("slots_by_location", {})
+            chosen_time  = state_data["data"].get("time", "")
+            loc_ok = not slots_by_loc or chosen_time in slots_by_loc.get(chosen_loc, [])
+            if loc_ok:
+                await _after_seating(msg, state_data, chosen_loc)
+            else:
+                await _handle_seating_relocation(msg, state_data, chosen_loc)
 
     # ── Hookah selection ──────────────────────────────────────────────────────
     elif data.startswith("hookah_"):
