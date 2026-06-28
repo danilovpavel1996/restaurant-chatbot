@@ -196,10 +196,6 @@ def _item_name(item: dict, lang: str) -> str:
     return item.get("name", "")
 
 
-def _fmt_ingr(ingr: str, max_len: int = 60) -> str:
-    return ingr[:max_len] + ("..." if len(ingr) > max_len else "")
-
-
 def _fmt_items(items: list[dict], lang: str) -> str:
     lines = []
     for item in items:
@@ -209,17 +205,17 @@ def _fmt_items(items: list[dict], lang: str) -> str:
         vol_str = (f" ({vol}ml)" if isinstance(vol, int) and vol
                    else f" ({vol})" if isinstance(vol, str) and vol else "")
         note_str = f"  ({item['note']})" if item.get("note") else ""
-        line = f"- {name}{vol_str} — {price} MDL{note_str}"
+        line = f"• {name}{vol_str} — {price} MDL{note_str}"
         ingr = item.get("ingredients", "")
         if ingr:
-            line += f"\n  {_fmt_ingr(ingr)}"
+            line += f"\n  {ingr}"
         lines.append(line)
     return "\n".join(lines)
 
 
 def _fmt_simple_items(items: list[dict]) -> str:
     """For drinks/spirits that only have name + price (no lang variants)."""
-    return "\n".join(f"- {item.get('name', '')} — {item.get('price_mdl', '')} MDL" for item in items)
+    return "\n".join(f"• {item.get('name', '')} — {item.get('price_mdl', '')} MDL" for item in items)
 
 
 def _pack_pages(blocks: list[str], max_len: int = 3800) -> list[str]:
@@ -252,7 +248,7 @@ def _fmt_hookah(lang: str, config: dict) -> str:
         else:
             name = opt["name"]
             desc = opt.get("description", "")
-        lines.append(f"- {name} — {opt['price_mdl']:,} MDL\n  {desc}")
+        lines.append(f"• {name} — {opt['price_mdl']:,} MDL\n  {desc}")
 
     if lang == "ro":
         hh_line = f"🕐 Happy Hour {hh['days']} {hh['time']}\n  Al doilea narghilă 50% reducere — doar {hh['price_second_hookah_mdl']} MDL"
@@ -294,7 +290,7 @@ def _fmt_sushi_pages(sushi: dict, lang: str, header: str) -> list[str]:
         sub_label = _sub.get(sub_key, sub_key)
         if sub_key == "sushi_sets":
             body = "\n".join(
-                f"- {_item_name(s, lang)} — {s.get('price_mdl', '')} MDL\n  {s.get('contents', '')}"
+                f"• {_item_name(s, lang)} — {s.get('price_mdl', '')} MDL\n  {s.get('contents', '')}"
                 for s in items
             )
         else:
