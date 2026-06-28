@@ -148,6 +148,306 @@ KEY RULES (ALWAYS FOLLOW):
 """.strip()
 
 
+# ── Menu category definitions ──────────────────────────────────────────────────
+
+MENU_CATEGORIES: list[tuple[str, str, dict]] = [
+    ("breakfast",        "🌅", {"en": "Breakfast",        "ro": "Mic dejun",        "ru": "Завтрак"}),
+    ("summer_menu",      "☀️", {"en": "Summer Menu",       "ro": "Meniu Vară",       "ru": "Летнее меню"}),
+    ("salads",           "🥗", {"en": "Salads",            "ro": "Salate",           "ru": "Салаты"}),
+    ("soups",            "🍵", {"en": "Soups",             "ro": "Supe",             "ru": "Супы"}),
+    ("premium_starters", "⭐", {"en": "Premium Starters",  "ro": "Startere Premium", "ru": "Премиум закуски"}),
+    ("premium_mains",    "🥩", {"en": "Premium Mains",     "ro": "Feluri Premium",   "ru": "Премиум блюда"}),
+    ("mains",            "🍜", {"en": "Main Dishes",       "ro": "Feluri Principale","ru": "Основные блюда"}),
+    ("sides",            "🫘", {"en": "Sides",             "ro": "Garnituri",        "ru": "Гарниры"}),
+    ("desserts",         "🍰", {"en": "Desserts",          "ro": "Deserturi",        "ru": "Десерты"}),
+    ("sushi",            "🍣", {"en": "Sushi",             "ro": "Sushi",            "ru": "Суши"}),
+    ("cocktails",        "🍹", {"en": "Cocktails",         "ro": "Cocktailuri",      "ru": "Коктейли"}),
+    ("drinks",           "🥤", {"en": "Other Drinks",      "ro": "Alte Băuturi",     "ru": "Напитки"}),
+    ("wines",            "🍷", {"en": "Wines",             "ro": "Vinuri",           "ru": "Вина"}),
+    ("spirits",          "🥃", {"en": "Spirits",           "ro": "Spirtoase",        "ru": "Крепкие напитки"}),
+    ("hookah",           "🔥", {"en": "Hookah",            "ro": "Narghilea",        "ru": "Кальян"}),
+]
+
+_SIMPLE_CAT_MAP = {
+    "breakfast":        "breakfast",
+    "summer_menu":      "new_summer_menu",
+    "salads":           "salads",
+    "soups":            "soups",
+    "premium_starters": "premium_starters",
+    "premium_mains":    "premium_mains",
+    "mains":            "mains",
+    "sides":            "sides",
+    "desserts":         "desserts",
+}
+
+
+def _cat_label_emoji(category_key: str, lang: str) -> tuple[str, str]:
+    for key, emoji, labels in MENU_CATEGORIES:
+        if key == category_key:
+            return emoji, labels.get(lang, labels["en"])
+    return "🍽", category_key
+
+
+def _item_name(item: dict, lang: str) -> str:
+    if lang == "en":
+        return item.get("name_en") or item.get("name", "")
+    if lang == "ru":
+        return item.get("name_ru") or item.get("name", "")
+    return item.get("name", "")
+
+
+def _fmt_ingr(ingr: str, max_len: int = 60) -> str:
+    return ingr[:max_len] + ("..." if len(ingr) > max_len else "")
+
+
+def _fmt_items(items: list[dict], lang: str) -> str:
+    lines = []
+    for item in items:
+        name = _item_name(item, lang)
+        price = item.get("price_mdl", "")
+        vol = item.get("volume_ml") or item.get("volume", "")
+        vol_str = (f" ({vol}ml)" if isinstance(vol, int) and vol
+                   else f" ({vol})" if isinstance(vol, str) and vol else "")
+        note_str = f"  ({item['note']})" if item.get("note") else ""
+        line = f"- {name}{vol_str} — {price} MDL{note_str}"
+        ingr = item.get("ingredients", "")
+        if ingr:
+            line += f"\n  {_fmt_ingr(ingr)}"
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _fmt_simple_items(items: list[dict]) -> str:
+    """For drinks/spirits that only have name + price (no lang variants)."""
+    return "\n".join(f"- {item.get('name', '')} — {item.get('price_mdl', '')} MDL" for item in items)
+
+
+def _pack_pages(blocks: list[str], max_len: int = 3800) -> list[str]:
+    """Group text blocks into pages, never exceeding max_len per page."""
+    pages: list[str] = []
+    current = ""
+    for block in blocks:
+        segment = ("\n\n" + block) if current else block
+        if current and len(current) + len(segment) > max_len:
+            pages.append(current.strip())
+            current = block
+        else:
+            current += segment
+    if current.strip():
+        pages.append(current.strip())
+    return pages or [""]
+
+
+def _fmt_hookah(lang: str, config: dict) -> str:
+    h = config["hookah"]
+    hh = h["happy_hour"]
+    lines = []
+    for opt in h["options"]:
+        if lang == "en":
+            name = opt.get("name_en", opt["name"])
+            desc = opt.get("description_en", opt.get("description", ""))
+        elif lang == "ru":
+            name = opt.get("name_ru", opt["name"])
+            desc = opt.get("description_ru", opt.get("description", ""))
+        else:
+            name = opt["name"]
+            desc = opt.get("description", "")
+        lines.append(f"- {name} — {opt['price_mdl']:,} MDL\n  {desc}")
+
+    if lang == "ro":
+        hh_line = f"🕐 Happy Hour {hh['days']} {hh['time']}\n  Al doilea narghilă 50% reducere — doar {hh['price_second_hookah_mdl']} MDL"
+        age_line = "⚠️ Doar pentru persoane cu vârsta de 18+ ani"
+        title = "🔥 Narghilea"
+    elif lang == "ru":
+        hh_line = f"🕐 Happy Hour {hh['days']} {hh['time']}\n  Второй кальян 50% скидка — всего {hh['price_second_hookah_mdl']} MDL"
+        age_line = "⚠️ Только для гостей 18+"
+        title = "🔥 Кальян"
+    else:
+        hh_line = f"🕐 Happy Hour {hh['days']} {hh['time']}\n  Second hookah 50% off — only {hh['price_second_hookah_mdl']} MDL"
+        age_line = "⚠️ Age 18+ only"
+        title = "🔥 Hookah (Narghilea)"
+
+    body = "\n\n".join(lines)
+    return f"{title}\n\n{body}\n\n{hh_line}\n\n{age_line}"
+
+
+def _fmt_sushi_pages(sushi: dict, lang: str, header: str) -> list[str]:
+    _sub = {
+        "en": {"rolls": "Rolls", "special_rolls": "Special Rolls", "hoso_maki": "Hoso Maki",
+               "nigiri": "Nigiri", "sashimi": "Sashimi", "sushi_sets": "Sets (for 2)"},
+        "ro": {"rolls": "Rulouri", "special_rolls": "Rulouri Speciale", "hoso_maki": "Hoso Maki",
+               "nigiri": "Nigiri", "sashimi": "Sashimi", "sushi_sets": "Seturi (pentru 2)"},
+        "ru": {"rolls": "Роллы", "special_rolls": "Специальные роллы", "hoso_maki": "Хосо Маки",
+               "nigiri": "Нигири", "sashimi": "Сашими", "sushi_sets": "Сеты (на 2)"},
+    }.get(lang, {})
+
+    note = {"en": "⏰ Sushi available 12:00–22:30 only",
+            "ro": "⏰ Sushi disponibil 12:00–22:30",
+            "ru": "⏰ Суши доступны 12:00–22:30"}.get(lang, "")
+
+    blocks = [header, note]
+    order = ["rolls", "special_rolls", "hoso_maki", "nigiri", "sashimi", "sushi_sets"]
+    for sub_key in order:
+        items = sushi.get(sub_key, [])
+        if not items:
+            continue
+        sub_label = _sub.get(sub_key, sub_key)
+        if sub_key == "sushi_sets":
+            body = "\n".join(
+                f"- {_item_name(s, lang)} — {s.get('price_mdl', '')} MDL\n  {s.get('contents', '')}"
+                for s in items
+            )
+        else:
+            body = _fmt_items(items, lang)
+        blocks.append(f"{sub_label}:\n{body}")
+
+    return _pack_pages(blocks)
+
+
+def _fmt_cocktails_pages(drinks: dict, lang: str, header: str) -> list[str]:
+    _sub = {
+        "en": {"cocktails_classic": "Classic Cocktails",
+               "cocktails_signature": "Signature Cocktails",
+               "cocktails_non_alcoholic": "Non-Alcoholic"},
+        "ro": {"cocktails_classic": "Cocktailuri Clasice",
+               "cocktails_signature": "Cocktailuri Signature",
+               "cocktails_non_alcoholic": "Fără Alcool"},
+        "ru": {"cocktails_classic": "Классические коктейли",
+               "cocktails_signature": "Авторские коктейли",
+               "cocktails_non_alcoholic": "Безалкогольные"},
+    }.get(lang, {})
+
+    blocks = [header]
+    for sub_key in ("cocktails_classic", "cocktails_signature", "cocktails_non_alcoholic"):
+        section = drinks.get(sub_key, {})
+        items = section.get("items", [])
+        if not items:
+            continue
+        label = _sub.get(sub_key, sub_key)
+        blocks.append(f"{label}:\n{_fmt_items(items, lang)}")
+    return _pack_pages(blocks)
+
+
+def _fmt_drinks_pages(drinks: dict, lang: str, header: str) -> list[str]:
+    _sub = {
+        "en": {"beer_cider": "Beer & Cider", "lemonades": "Lemonades", "fresh_juices": "Fresh Juices",
+               "tea": "Teas", "ice_tea": "Iced Tea", "coffee": "Coffee",
+               "hot_drinks": "Hot Drinks", "soft_drinks": "Soft Drinks",
+               "water": "Water", "energy_drinks": "Energy Drinks"},
+        "ro": {"beer_cider": "Bere & Cidru", "lemonades": "Limonade", "fresh_juices": "Sucuri Proaspete",
+               "tea": "Ceaiuri", "ice_tea": "Ice Tea", "coffee": "Cafea",
+               "hot_drinks": "Băuturi Calde", "soft_drinks": "Soft Drinks",
+               "water": "Apă", "energy_drinks": "Energizante"},
+        "ru": {"beer_cider": "Пиво и сидр", "lemonades": "Лимонады", "fresh_juices": "Свежие соки",
+               "tea": "Чаи", "ice_tea": "Холодный чай", "coffee": "Кофе",
+               "hot_drinks": "Горячие напитки", "soft_drinks": "Безалкогольные",
+               "water": "Вода", "energy_drinks": "Энергетики"},
+    }.get(lang, {})
+
+    blocks = [header]
+    for sub_key, label in _sub.items():
+        section = drinks.get(sub_key)
+        if not section:
+            continue
+        items = section.get("items", [])
+        note_str = section.get("note", "")
+
+        if sub_key == "tea":
+            # items is a list of strings
+            tea_names = ", ".join(items) if isinstance(items, list) else ""
+            price = section.get("price_mdl", "")
+            body = f"{tea_names}\n  {price} MDL each"
+        elif sub_key == "ice_tea":
+            tea_names = ", ".join(items) if isinstance(items, list) else ""
+            price = section.get("price_mdl", "")
+            body = f"{tea_names}\n  {price} MDL each"
+        elif sub_key == "soft_drinks":
+            body = f"{note_str or ''} — {section.get('price_mdl', '')} MDL"
+        elif items:
+            body = _fmt_items(items, lang)
+        else:
+            continue
+
+        header_line = f"{label}:" + (f"  ({note_str})" if note_str and sub_key not in ("tea", "ice_tea", "soft_drinks") else "")
+        blocks.append(f"{header_line}\n{body}")
+
+    return _pack_pages(blocks)
+
+
+def _fmt_wines_pages(wines: dict, lang: str, header: str) -> list[str]:
+    _sub = {
+        "en": {"by_glass": "By the Glass", "champagne_prosecco": "Champagne & Prosecco",
+               "white": "White Wine", "rose": "Rosé", "red": "Red Wine"},
+        "ro": {"by_glass": "La Pahar", "champagne_prosecco": "Șampanie & Prosecco",
+               "white": "Vin Alb", "rose": "Rosé", "red": "Vin Roșu"},
+        "ru": {"by_glass": "По бокалу", "champagne_prosecco": "Шампанское и Просекко",
+               "white": "Белое вино", "rose": "Розовое", "red": "Красное вино"},
+    }.get(lang, {})
+
+    blocks = [header]
+    for sub_key, label in _sub.items():
+        items = wines.get(sub_key, [])
+        if not items:
+            continue
+        blocks.append(f"{label}:\n{_fmt_simple_items(items)}")
+    return _pack_pages(blocks)
+
+
+def _fmt_spirits_pages(spirits: dict, lang: str, header: str) -> list[str]:
+    _sub = {
+        "en": {"aperitifs": "Aperitifs", "whisky": "Whisky", "cognac": "Cognac & Brandy",
+               "liqueurs": "Liqueurs", "gin": "Gin", "rum": "Rum",
+               "sake": "Sake", "tequila": "Tequila", "vodka": "Vodka"},
+        "ro": {"aperitifs": "Aperitive", "whisky": "Whisky", "cognac": "Coniac & Brandy",
+               "liqueurs": "Lichioruri", "gin": "Gin", "rum": "Rom",
+               "sake": "Sake", "tequila": "Tequila", "vodka": "Vodcă"},
+        "ru": {"aperitifs": "Аперитивы", "whisky": "Виски", "cognac": "Коньяк и бренди",
+               "liqueurs": "Ликёры", "gin": "Джин", "rum": "Ром",
+               "sake": "Саке", "tequila": "Текила", "vodka": "Водка"},
+    }.get(lang, {})
+
+    blocks = [header]
+    for sub_key, label in _sub.items():
+        items = spirits.get(sub_key, [])
+        if not items:
+            continue
+        blocks.append(f"{label}:\n{_fmt_simple_items(items)}")
+    return _pack_pages(blocks)
+
+
+def format_menu_category(category_key: str, lang: str, config: dict) -> list[str]:
+    """Return 1+ message strings (each ≤ 3800 chars) for the given category."""
+    emoji, cat_label = _cat_label_emoji(category_key, lang)
+    header = f"{emoji} {cat_label}"
+    menu = config["menu"]
+
+    if category_key == "hookah":
+        return [_fmt_hookah(lang, config)]
+
+    if category_key in _SIMPLE_CAT_MAP:
+        items = menu[_SIMPLE_CAT_MAP[category_key]]["items"]
+        return [f"{header}\n\n{_fmt_items(items, lang)}"]
+
+    if category_key == "sushi":
+        return _fmt_sushi_pages(menu["sushi"], lang, header)
+
+    if category_key == "cocktails":
+        return _fmt_cocktails_pages(menu["drinks"], lang, header)
+
+    if category_key == "drinks":
+        return _fmt_drinks_pages(menu["drinks"], lang, header)
+
+    if category_key == "wines":
+        return _fmt_wines_pages(menu["drinks"]["wines"], lang, header)
+
+    if category_key == "spirits":
+        return _fmt_spirits_pages(menu["drinks"]["spirits"], lang, header)
+
+    return [f"{header}\n\n(No data available)"]
+
+
+# ── Reservation formatting ──────────────────────────────────────────────────────
+
 def format_single_reservation(res: dict, lang: str) -> str:
     """Format a single reservation record for display."""
     status = res.get("status", "confirmed")

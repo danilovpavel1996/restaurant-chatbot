@@ -26,7 +26,13 @@ from .reservations import (
     find_by_phone,
     update_reservation,
 )
-from .utils import format_single_reservation, get_hookah_options, load_config
+from .utils import (
+    format_menu_category,
+    format_single_reservation,
+    get_hookah_options,
+    load_config,
+    MENU_CATEGORIES,
+)
 
 logger = logging.getLogger(__name__)
 config = load_config()
@@ -56,6 +62,7 @@ _MONTHS = {
            "июля", "августа", "сентября", "октября", "ноября", "декабря"],
 }
 
+MENU_TRIGGERS = {"menu", "meniu", "меню", "card", "food", "eat", "mâncare", "dishes", "prices", "prețuri"}
 RESERVATION_TRIGGERS = {
     "rezervare", "rezerv", "rezervați", "rezerva", "book", "booking",
     "table", "masa", "masă", "reservation", "бронирование", "бронировать",
@@ -651,6 +658,27 @@ def _main_menu_keyboard(lang: str) -> InlineKeyboardMarkup:
     btns = [InlineKeyboardButton(get_button_text(k, lang), callback_data=cb)
             for k, cb in zip(keys, cbs)]
     return InlineKeyboardMarkup([btns[0:2], btns[2:4], btns[4:6]])
+
+
+def _menu_category_keyboard(lang: str) -> InlineKeyboardMarkup:
+    prompt = {"ro": "Ce doriți să explorați? 🍽",
+              "en": "What would you like to explore? 🍽",
+              "ru": "Что хотите посмотреть? 🍽"}.get(lang, "What would you like to explore? 🍽")
+    buttons = []
+    for key, emoji, labels in MENU_CATEGORIES:
+        label = labels.get(lang, labels["en"])
+        buttons.append(InlineKeyboardButton(f"{emoji} {label}", callback_data=f"menu_cat_{key}"))
+    rows = [buttons[i:i+2] for i in range(0, len(buttons), 2)]
+    return prompt, InlineKeyboardMarkup(rows)
+
+
+def _menu_nav_keyboard(lang: str) -> InlineKeyboardMarkup:
+    back  = {"ro": "🔙 Înapoi la meniu", "en": "🔙 Back to menu",     "ru": "🔙 Назад к меню"}.get(lang)
+    res   = {"ro": "📅 Rezervă o masă",  "en": "📅 Reserve a table",  "ru": "📅 Забронировать стол"}.get(lang)
+    return InlineKeyboardMarkup([[
+        InlineKeyboardButton(back, callback_data="menu_back"),
+        InlineKeyboardButton(res,  callback_data="start_reservation"),
+    ]])
 
 
 def _seating_keyboard(lang: str) -> InlineKeyboardMarkup:
@@ -1408,6 +1436,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             state_data["state"] = "awaiting_name"
             lang = state_data["language"]
             await update.message.reply_text(_msg(lang, "start_reservation"))
+        elif any(t in lower.split() for t in MENU_TRIGGERS):
+            lang = state_data["language"]
+            prompt, kb = _menu_category_keyboard(lang)
+            await update.message.reply_text(prompt, reply_markup=kb)
         else:
             await _handle_ai(update, context, state_data, text)
 
@@ -1462,24 +1494,41 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         }.get(lang, handoff["response_ro"])
         await msg.reply_text(reply)
 
-    elif data in ("menu_meniu", "menu_program", "menu_locatie", "menu_narghilea"):
-        # Route to AI with a contextual question
+    elif data == "menu_meniu":
+        prompt, kb = _menu_category_keyboard(lang)
+        await msg.reply_text(prompt, reply_markup=kb)
+
+    elif data in ("menu_program", "menu_locatie", "menu_narghilea"):
         questions = {
-            "menu_meniu":      {"ro": "Care sunt preparatele din meniu și prețurile?",
-                                "en": "What dishes are on the menu and what are the prices?",
-                                "ru": "Какие блюда в меню и каковы цены?"},
-            "menu_program":    {"ro": "Care este programul restaurantului?",
-                                "en": "What are the opening hours?",
-                                "ru": "Каковы часы работы ресторана?"},
-            "menu_locatie":    {"ro": "Unde este localizat restaurantul și cum ajung acolo?",
-                                "en": "Where is the restaurant located and how do I get there?",
-                                "ru": "Где находится ресторан и как до него добраться?"},
-            "menu_narghilea":  {"ro": "Ce tipuri de narghilele aveți și care sunt prețurile?",
-                                "en": "What hookah types do you offer and what are the prices?",
-                                "ru": "Какие виды кальяна у вас есть и каковы цены?"},
+            "menu_program":   {"ro": "Care este programul restaurantului?",
+                               "en": "What are the opening hours?",
+                               "ru": "Каковы часы работы ресторана?"},
+            "menu_locatie":   {"ro": "Unde este localizat restaurantul și cum ajung acolo?",
+                               "en": "Where is the restaurant located and how do I get there?",
+                               "ru": "Где находится ресторан и как до него добраться?"},
+            "menu_narghilea": {"ro": "Ce tipuri de narghilele aveți și care sunt prețurile?",
+                               "en": "What hookah types do you offer and what are the prices?",
+                               "ru": "Какие виды кальяна у вас есть и каковы цены?"},
         }
         question = questions[data].get(lang, questions[data]["ro"])
         await _handle_ai(update, context, state_data, question)
+
+    # ── Menu category detail ──────────────────────────────────────────
+    elif data.startswith("menu_cat_"):
+        category_key = data[len("menu_cat_"):]
+        pages = format_menu_category(category_key, lang, config)
+        nav_kb = _menu_nav_keyboard(lang)
+        for page in pages[:-1]:
+            await msg.reply_text(page)
+        await msg.reply_text(pages[-1], reply_markup=nav_kb)
+
+    elif data == "menu_back":
+        prompt, kb = _menu_category_keyboard(lang)
+        await msg.reply_text(prompt, reply_markup=kb)
+
+    elif data == "start_reservation":
+        state_data["state"] = "awaiting_name"
+        await msg.reply_text(_msg(lang, "start_reservation"))
 
     # ── Time slot button ──────────────────────────────────────────────────────
     elif data.startswith("slot_"):
