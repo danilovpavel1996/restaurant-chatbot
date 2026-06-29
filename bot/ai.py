@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 
 from openai import AsyncOpenAI
 
@@ -20,12 +21,32 @@ _FALLBACK = {
 }
 
 
+def strip_markdown(text: str) -> str:
+    """Remove all markdown formatting so Telegram plain-text mode shows clean output."""
+    text = re.sub(r'\*{1,3}(.*?)\*{1,3}', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'_{1,2}(.*?)_{1,2}', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'`{1,3}(.*?)`{1,3}', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'^>\s+', '', text, flags=re.MULTILINE)
+    return text.strip()
+
+
 def build_system_prompt(config: dict, language: str) -> str:
     lang_name = _LANG_NAMES.get(language, "Romanian")
     restaurant_info = config_to_text_summary(config)
     handoff = config["human_handoff"]
 
     return f"""You are the virtual assistant of {config['restaurant']['name']}, a premium lounge restaurant in Bucharest.
+
+CRITICAL FORMATTING RULE: Never use any markdown formatting in your responses. This means:
+- Never use ** for bold (write normally instead)
+- Never use * for italic
+- Never use # for headers
+- Never use __ for underline
+- Never use ``` for code blocks
+- Never use > for quotes
+Use only plain text, bullet points (•), and emoji for structure.
+This rule applies to EVERY response, no exceptions, regardless of context.
 
 CRITICAL INSTRUCTION: Always respond exclusively in {lang_name}. Never switch language.
 
@@ -133,7 +154,7 @@ async def get_ai_response(
             max_tokens=600,
             temperature=0.7,
         )
-        return response.choices[0].message.content
+        return strip_markdown(response.choices[0].message.content)
     except Exception as exc:
         logger.error("OpenAI API error: %s", exc)
         return _FALLBACK.get(language, _FALLBACK["ro"])
