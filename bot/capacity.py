@@ -2,6 +2,7 @@
 
 import json
 import os
+from datetime import datetime, timedelta
 from typing import Optional
 
 TABLES_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tables_config.json")
@@ -25,6 +26,26 @@ def load_reservations() -> list[dict]:
 def _time_to_minutes(t: str) -> int:
     h, m = t.split(":")
     return int(h) * 60 + int(m)
+
+
+def _filter_past_and_too_soon_slots(date_str: str, slots: list[str]) -> list[str]:
+    """If date_str is today, drop slots that are in the past or less than 1 hour away."""
+    try:
+        date_obj = datetime.strptime(date_str, "%d.%m.%Y").date()
+    except ValueError:
+        return slots
+
+    if date_obj != datetime.now().date():
+        return slots
+
+    min_allowed = datetime.now() + timedelta(hours=1)
+    result = []
+    for slot in slots:
+        h, m = map(int, slot.split(":"))
+        slot_dt = datetime.now().replace(hour=h, minute=m, second=0, microsecond=0)
+        if slot_dt >= min_allowed:
+            result.append(slot)
+    return result
 
 
 def _all_slots() -> list[str]:
@@ -62,7 +83,7 @@ def get_available_slots_from_occupancy(
                 available.append(slot)
                 break
 
-    return available
+    return _filter_past_and_too_soon_slots(date, available)
 
 
 def find_available_table_from_occupancy(

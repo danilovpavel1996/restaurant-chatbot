@@ -1130,13 +1130,26 @@ async def _handle_reservation_text(
             return
         data["party_size"] = size
 
-        slots_by_loc = get_available_slots_by_location(data.get("date", ""), size)
+        chosen_date  = data.get("date", "")
+        slots_by_loc = get_available_slots_by_location(chosen_date, size)
         if not slots_by_loc.get("any"):
-            no_tables_msg = {
-                "ro": f"Ne pare rău, nu mai avem mese disponibile pentru {size} persoane în acea zi. Vă rugăm să alegeți altă dată.",
-                "en": f"Sorry, we have no available tables for {size} guests on that date. Please choose a different date.",
-                "ru": f"К сожалению, на эту дату нет свободных столиков для {size} гостей. Пожалуйста, выберите другую дату.",
-            }.get(lang, f"Sorry, no tables available for {size} guests on that date.")
+            from datetime import datetime as _dt
+            try:
+                _is_today = _dt.strptime(chosen_date, "%d.%m.%Y").date() == _dt.now().date()
+            except ValueError:
+                _is_today = False
+            if _is_today:
+                no_tables_msg = {
+                    "ro": "Ne pare rău, nu mai sunt sloturi disponibile pentru astăzi. Vă rugăm alegeți altă dată.",
+                    "en": "Sorry, there are no more available time slots for today. Please choose a different date.",
+                    "ru": "К сожалению, на сегодня больше нет свободных слотов. Пожалуйста, выберите другую дату.",
+                }.get(lang, "Sorry, there are no more available time slots for today. Please choose a different date.")
+            else:
+                no_tables_msg = {
+                    "ro": f"Ne pare rău, nu mai avem mese disponibile pentru {size} persoane în acea zi. Vă rugăm să alegeți altă dată.",
+                    "en": f"Sorry, we have no available tables for {size} guests on that date. Please choose a different date.",
+                    "ru": f"К сожалению, на эту дату нет свободных столиков для {size} гостей. Пожалуйста, выберите другую дату.",
+                }.get(lang, f"Sorry, no tables available for {size} guests on that date.")
             await msg.reply_text(no_tables_msg)
             state_data["state"] = "awaiting_date"
             data.pop("date", None)
