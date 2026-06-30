@@ -1,9 +1,15 @@
 """Table capacity management — availability checks using Google Sheets Occupancy data."""
 
 import json
+import logging
 import os
 from datetime import datetime, timedelta
 from typing import Optional
+from zoneinfo import ZoneInfo
+
+logger = logging.getLogger(__name__)
+
+_TZ = ZoneInfo("Europe/Bucharest")
 
 TABLES_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "tables_config.json")
 RESERVATIONS_FILE = os.path.join(os.path.dirname(os.path.dirname(__file__)), "reservations.json")
@@ -29,22 +35,31 @@ def _time_to_minutes(t: str) -> int:
 
 
 def _filter_past_and_too_soon_slots(date_str: str, slots: list[str]) -> list[str]:
-    """If date_str is today, drop slots that are in the past or less than 1 hour away."""
+    """If date_str is today (Bucharest time), drop slots in the past or < 1 hour away."""
     try:
         date_obj = datetime.strptime(date_str, "%d.%m.%Y").date()
     except ValueError:
+        logger.warning("_filter: could not parse date_str=%r — skipping filter", date_str)
         return slots
 
-    if date_obj != datetime.now().date():
+    now = datetime.now(tz=_TZ)
+    if date_obj != now.date():
         return slots
 
-    min_allowed = datetime.now() + timedelta(hours=1)
+    min_allowed = now + timedelta(hours=1)
+    logger.info(
+        "Filtering today slots | now=%s min_allowed=%s slots_in=%s",
+        now.strftime("%H:%M"), min_allowed.strftime("%H:%M"), slots,
+    )
+
     result = []
     for slot in slots:
         h, m = map(int, slot.split(":"))
-        slot_dt = datetime.now().replace(hour=h, minute=m, second=0, microsecond=0)
+        slot_dt = now.replace(hour=h, minute=m, second=0, microsecond=0)
         if slot_dt >= min_allowed:
             result.append(slot)
+        else:
+            logger.info("Filtered out %s (< 1 h away)", slot)
     return result
 
 
@@ -83,7 +98,12 @@ def get_available_slots_from_occupancy(
                 available.append(slot)
                 break
 
-    return _filter_past_and_too_soon_slots(date, available)
+    filtered = _filter_past_and_too_soon_slots(date, available)
+    logger.info(
+        "get_available_slots | date=%s party=%s loc=%s → %s",
+        date, party_size, preferred_location or "any", filtered,
+    )
+    return filtered
 
 
 def find_available_table_from_occupancy(

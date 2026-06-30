@@ -13,6 +13,7 @@ from telegram.ext import ContextTypes
 
 from .ai import get_ai_response
 from .capacity import (
+    _filter_past_and_too_soon_slots,
     find_available_table_from_occupancy,
     find_nearest_available_from_occupancy,
     get_available_slots_by_location,
@@ -1061,9 +1062,18 @@ async def _handle_reservation_text(
             )
 
     elif state == "awaiting_time":
-        slots_by_loc    = data.get("slots_by_location", {})
-        available_slots = slots_by_loc.get("any") or TIME_SLOTS
-        ask_time_text   = {
+        slots_by_loc = data.get("slots_by_location", {})
+        _any = slots_by_loc.get("any")
+        # None = no Sheets data (API failure) → fall back to full list filtered for today
+        # Empty list = nothing available (should have been caught in awaiting_party_size)
+        available_slots = _any if _any is not None else _filter_past_and_too_soon_slots(
+            data.get("date", ""), TIME_SLOTS
+        )
+        logger.info(
+            "awaiting_time | date=%s available_slots=%s",
+            data.get("date"), available_slots,
+        )
+        ask_time_text = {
             "ro": "Ce oră preferați?",
             "en": "What time would you prefer?",
             "ru": "Какое время вы предпочитаете?",
@@ -1110,8 +1120,11 @@ async def _handle_reservation_text(
 
     elif state == "awaiting_time_confirmation":
         # User should interact via buttons; any text sends them back to the time keyboard
-        slots_by_loc    = data.get("slots_by_location", {})
-        available_slots = slots_by_loc.get("any") or TIME_SLOTS
+        slots_by_loc = data.get("slots_by_location", {})
+        _any = slots_by_loc.get("any")
+        available_slots = _any if _any is not None else _filter_past_and_too_soon_slots(
+            data.get("date", ""), TIME_SLOTS
+        )
         ask_time_text   = {
             "ro": "Vă rugăm să selectați un slot disponibil:",
             "en": "Please select an available time slot:",
